@@ -27,6 +27,16 @@ trait LiveView
     automatically if any assigns changed.
     """
 
+  fun ref handle_info(message: Any val, socket: Socket ref) =>
+    """
+    Called when an external actor sends a message to this connection
+    via PubSub or direct `InfoReceiver.info` calls.
+
+    Default implementation does nothing. Override to handle server-push
+    messages from timers, background jobs, or PubSub topics.
+    """
+    None
+
   fun box render(assigns: Assigns box): String ?
     """
     Return the full HTML for the current state. Partial because rendering

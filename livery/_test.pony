@@ -29,6 +29,14 @@ actor \nodoc\ Main is TestList
     test(_TestRouterQueryStrip)
     // Socket tests
     test(_TestSocketPushEvent)
+    // PubSub tests
+    test(_TestPubSubDeliver)
+    test(_TestPubSubNoSubscribers)
+    test(_TestPubSubUnsubscribe)
+    test(_TestPubSubUnsubscribeAll)
+    test(_TestPubSubMultipleSubscribers)
+    // Socket + PubSub integration tests
+    test(_TestSocketSubscribeDeliver)
 
 // --- Test helpers ---
 
@@ -43,6 +51,56 @@ class \nodoc\ _DummyView is LiveView
 
   fun box render(assigns: Assigns box): String =>
     ""
+
+actor \nodoc\ _TestInfoReceiver is InfoReceiver
+  """
+  Test helper that completes the test on first message received.
+  """
+  let _h: TestHelper
+
+  new create(h: TestHelper) =>
+    _h = h
+
+  be info(message: Any val) =>
+    _h.complete(true)
+
+actor \nodoc\ _SentinelInfoReceiver is InfoReceiver
+  """
+  Test helper for negative tests. When it receives a message, it checks
+  that the guarded receiver was NOT called, then completes the test.
+  """
+  let _h: TestHelper
+  let _guarded: _GuardedInfoReceiver tag
+
+  new create(h: TestHelper, guarded: _GuardedInfoReceiver tag) =>
+    _h = h
+    _guarded = guarded
+
+  be info(message: Any val) =>
+    _guarded.check_not_called(_h)
+
+actor \nodoc\ _GuardedInfoReceiver is InfoReceiver
+  """
+  Test helper that tracks whether info was called. Used with
+  _SentinelInfoReceiver for negative delivery tests.
+  """
+  var _called: Bool = false
+
+  new create() => None
+
+  be info(message: Any val) =>
+    _called = true
+
+  be check_not_called(h: TestHelper) =>
+    h.assert_false(_called, "guarded receiver should not have been called")
+    h.complete(true)
+
+actor \nodoc\ _DummyInfoReceiver is InfoReceiver
+  """
+  No-op receiver for tests that need a placeholder InfoReceiver.
+  """
+  new create() => None
+  be info(message: Any val) => None
 
 // --- Assigns property tests ---
 
@@ -307,9 +365,123 @@ class \nodoc\ _TestSocketPushEvent is UnitTest
   fun apply(h: TestHelper) ? =>
     let assigns = Assigns
     let pending = Array[(String val, json.JsonValue)]
-    let socket = Socket(assigns, pending)
+    let socket = Socket(assigns, pending, _DummyInfoReceiver, PubSub)
     socket.push_event("test_event", "payload_value")
 
     h.assert_eq[USize](1, pending.size())
     (let event, _) = pending(0)?
     h.assert_eq[String val]("test_event", event)
+
+// --- PubSub tests ---
+
+class \nodoc\ _TestPubSubDeliver is UnitTest
+  fun name(): String => "pub_sub/deliver"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(2_000_000_000)
+    let receiver = _TestInfoReceiver(h)
+    let pub_sub = PubSub
+    pub_sub.subscribe("topic", receiver)
+    pub_sub.publish("topic", "hello")
+
+class \nodoc\ _TestPubSubNoSubscribers is UnitTest
+  fun name(): String => "pub_sub/no_subscribers"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(2_000_000_000)
+    let pub_sub = PubSub
+    // Publishing to an empty topic should not crash
+    pub_sub.publish("empty_topic", "hello")
+    // Use a sentinel to prove the publish was processed
+    let receiver = _TestInfoReceiver(h)
+    pub_sub.subscribe("proof", receiver)
+    pub_sub.publish("proof", "done")
+
+class \nodoc\ _TestPubSubUnsubscribe is UnitTest
+  fun name(): String => "pub_sub/unsubscribe"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(2_000_000_000)
+    let guarded = _GuardedInfoReceiver
+    let sentinel = _SentinelInfoReceiver(h, guarded)
+    let pub_sub = PubSub
+    pub_sub.subscribe("topic", guarded)
+    pub_sub.subscribe("topic", sentinel)
+    pub_sub.unsubscribe("topic", guarded)
+    pub_sub.publish("topic", "after_unsub")
+
+class \nodoc\ _TestPubSubUnsubscribeAll is UnitTest
+  fun name(): String => "pub_sub/unsubscribe_all"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(2_000_000_000)
+    let guarded = _GuardedInfoReceiver
+    let sentinel = _SentinelInfoReceiver(h, guarded)
+    let pub_sub = PubSub
+    pub_sub.subscribe("topic_a", guarded)
+    pub_sub.subscribe("topic_b", guarded)
+    pub_sub.subscribe("topic_a", sentinel)
+    pub_sub.unsubscribe_all(guarded)
+    pub_sub.publish("topic_a", "after_unsub_all")
+
+class \nodoc\ _TestPubSubMultipleSubscribers is UnitTest
+  fun name(): String => "pub_sub/multiple_subscribers"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(2_000_000_000)
+    let pub_sub = PubSub
+    let counter = _CountingInfoReceiver(h, 3)
+    // Subscribe three separate receivers; all should fire
+    let r1 = _ForwardingInfoReceiver(counter)
+    let r2 = _ForwardingInfoReceiver(counter)
+    let r3 = _ForwardingInfoReceiver(counter)
+    pub_sub.subscribe("topic", r1)
+    pub_sub.subscribe("topic", r2)
+    pub_sub.subscribe("topic", r3)
+    pub_sub.publish("topic", "broadcast")
+
+actor \nodoc\ _CountingInfoReceiver
+  """
+  Completes the test after receiving an expected number of forwarded
+  messages.
+  """
+  let _h: TestHelper
+  let _expected: USize
+  var _count: USize = 0
+
+  new create(h: TestHelper, expected: USize) =>
+    _h = h
+    _expected = expected
+
+  be received() =>
+    _count = _count + 1
+    if _count == _expected then
+      _h.complete(true)
+    end
+
+actor \nodoc\ _ForwardingInfoReceiver is InfoReceiver
+  """
+  Forwards each info message to a CountingInfoReceiver.
+  """
+  let _counter: _CountingInfoReceiver tag
+
+  new create(counter: _CountingInfoReceiver tag) =>
+    _counter = counter
+
+  be info(message: Any val) =>
+    _counter.received()
+
+// --- Socket + PubSub integration tests ---
+
+class \nodoc\ _TestSocketSubscribeDeliver is UnitTest
+  fun name(): String => "socket/subscribe_deliver"
+
+  fun apply(h: TestHelper) =>
+    h.long_test(2_000_000_000)
+    let assigns = Assigns
+    let pending = Array[(String val, json.JsonValue)]
+    let receiver = _TestInfoReceiver(h)
+    let pub_sub = PubSub
+    let socket = Socket(assigns, pending, receiver, pub_sub)
+    socket.subscribe("test_topic")
+    pub_sub.publish("test_topic", "hello")

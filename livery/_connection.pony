@@ -18,13 +18,16 @@ actor _Connection is mare.WebSocketServerActor
   let _socket: Socket ref
   var _last_html: String val = ""
   let _router: Routes val
+  let _pub_sub: PubSub tag
 
   new create(auth: lori.TCPServerAuth, fd: U32,
-    config: mare.WebSocketConfig val, routes: Routes val)
+    config: mare.WebSocketConfig val, routes: Routes val,
+    pub_sub: PubSub tag)
   =>
     _assigns = Assigns
     _pending_events = Array[(String val, json.JsonValue)]
-    _socket = Socket(_assigns, _pending_events)
+    _pub_sub = pub_sub
+    _socket = Socket(_assigns, _pending_events, this, _pub_sub)
     _router = routes
     _ws = mare.WebSocketServer(auth, fd, this, config)
 
@@ -79,6 +82,17 @@ actor _Connection is mare.WebSocketServerActor
       end
     end
 
+  be info(message: Any val) =>
+    """
+    Deliver an external message to the LiveView via handle_info.
+    Silently dropped if the view has not been mounted yet.
+    """
+    match _view
+    | let v: LiveView ref =>
+      v.handle_info(message, _socket)
+      _maybe_rerender(v)
+    end
+
   fun ref _maybe_rerender(v: LiveView ref) =>
     if _assigns.changed() then
       try
@@ -104,4 +118,4 @@ actor _Connection is mare.WebSocketServerActor
   fun ref on_closed(close_status: mare.CloseStatus,
     close_reason: String val)
   =>
-    None
+    _pub_sub.unsubscribe_all(this)

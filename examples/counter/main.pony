@@ -42,4 +42,4 @@ actor Main
       {(): LiveView ref^ ? => CounterView.create()?} val)
 
     Listener(lori.TCPListenAuth(env.root), "0.0.0.0", "8081",
-      router.build(), env.err)
+      router.build(), PubSub, env.err)

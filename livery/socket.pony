@@ -6,16 +6,22 @@ class Socket
   User-facing API passed to `LiveView` lifecycle methods.
 
   Wraps assigns and provides framework actions like pushing server-initiated
-  events to the client.
+  events to the client, subscribing to PubSub topics, and obtaining a
+  shareable connection reference.
   """
   let _assigns: Assigns ref
   let _pending_events: Array[(String val, json.JsonValue)] ref
+  let _self: InfoReceiver tag
+  let _pub_sub: PubSub tag
 
   new create(assigns: Assigns ref,
-    pending_events: Array[(String val, json.JsonValue)] ref)
+    pending_events: Array[(String val, json.JsonValue)] ref,
+    self': InfoReceiver tag, pub_sub: PubSub tag)
   =>
     _assigns = assigns
     _pending_events = pending_events
+    _self = self'
+    _pub_sub = pub_sub
 
   fun ref assign(key: String,
     value: (String | templates.TemplateValue))
@@ -38,3 +44,26 @@ class Socket
     flushed after the current render cycle.
     """
     _pending_events.push((event, payload))
+
+  fun box self(): InfoReceiver tag =>
+    """
+    Return a shareable reference to this connection.
+
+    Pass this to external actors so they can send messages via
+    `InfoReceiver.info`, which arrive at `LiveView.handle_info`.
+    """
+    _self
+
+  fun ref subscribe(topic: String) =>
+    """
+    Subscribe this connection to a PubSub topic. Messages published to
+    the topic will arrive via `LiveView.handle_info`. Subscriptions are
+    automatically cleaned up when the connection closes.
+    """
+    _pub_sub.subscribe(topic, _self)
+
+  fun ref unsubscribe(topic: String) =>
+    """
+    Unsubscribe this connection from a PubSub topic.
+    """
+    _pub_sub.unsubscribe(topic, _self)

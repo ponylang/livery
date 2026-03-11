@@ -12,14 +12,16 @@ actor Listener is lori.TCPListenerActor
   let _server_auth: lori.TCPServerAuth
   let _config: mare.WebSocketConfig val
   let _routes: Routes val
+  let _pub_sub: PubSub tag
   let _out: OutStream tag
 
   new create(auth: lori.TCPListenAuth, host: String, port: String,
-    routes: Routes val, out: OutStream tag)
+    routes: Routes val, pub_sub: PubSub tag, out: OutStream tag)
   =>
     _server_auth = lori.TCPServerAuth(auth)
     _config = mare.WebSocketConfig(host, port)
     _routes = routes
+    _pub_sub = pub_sub
     _out = out
     _tcp_listener = lori.TCPListener(auth, host, port, this)
 
@@ -27,7 +29,7 @@ actor Listener is lori.TCPListenerActor
     _tcp_listener
 
   fun ref _on_accept(fd: U32): _Connection =>
-    _Connection(_server_auth, fd, _config, _routes)
+    _Connection(_server_auth, fd, _config, _routes, _pub_sub)
 
   fun ref _on_listen_failure() =>
     _out.print("Listener: failed to bind to " + _config.host + ":"

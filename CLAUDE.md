@@ -25,16 +25,18 @@ Targets: `make test` (build + run tests + build examples), `make unit-tests` (te
 
 ### Public API
 
-- `LiveView` trait — user implements `mount`, `handle_event`, `render`
+- `LiveView` trait — user implements `mount`, `handle_event`, `handle_info`, `render`
 - `Assigns` — key-value store with dirty tracking, backed by `TemplateValues`
-- `Socket` — user-facing handle passed to lifecycle methods
+- `Socket` — user-facing handle passed to lifecycle methods; provides `self()`, `subscribe(topic)`, `unsubscribe(topic)`
 - `Factory` — `interface val` for creating `LiveView` instances (lambdas work via structural typing)
 - `Router` / `Routes` — mutable builder freezes into immutable `Routes val`
+- `InfoReceiver` — `interface tag` handle for sending messages to a connection from external actors
+- `PubSub` — actor for topic-based publish-subscribe across connections
 - `Listener` — actor wrapping lori's `TCPListenerActor`
 
 ### Internal
 
-- `_Connection` — one actor per client, implements `WebSocketServerActor`. Two-phase init: view is `None` until `on_open` delivers the URI for route lookup.
+- `_Connection` — one actor per client, implements `WebSocketServerActor`. Two-phase init: view is `None` until `on_open` delivers the URI for route lookup. Has `info` behavior for external message delivery; cleans up PubSub subscriptions in `on_closed`.
 - `_WireProtocol` — JSON encode/decode for the client-server wire format.
 - `_Unreachable` — panic primitive for impossible code paths.
 
@@ -52,6 +54,8 @@ livery/           # Library package (also the test compilation target)
   assigns.pony    # Assigns class
   socket.pony     # Socket class
   factory.pony    # Factory interface
+  info_receiver.pony # InfoReceiver interface
+  pub_sub.pony    # PubSub actor
   router.pony     # Router + Routes
   listener.pony   # Listener actor
   _connection.pony # Connection actor (internal)
@@ -60,6 +64,7 @@ livery/           # Library package (also the test compilation target)
   _test.pony      # All tests (single runner)
 examples/
   counter/        # Increment/decrement counter
+  ticker/         # PubSub-driven ticker (server push)
 ```
 
 ## Conventions
@@ -67,4 +72,4 @@ examples/
 - Qualified imports in library code: `use json = "json"`, `use mare = "mare"`, etc.
 - Single test runner in `livery/_test.pony` with `Main is TestList`.
 - `\nodoc\` on all test types.
-- Property-based tests (PonyCheck) for Assigns; example-based for wire protocol, router, socket.
+- Property-based tests (PonyCheck) for Assigns; example-based for wire protocol, router, socket, PubSub.

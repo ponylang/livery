@@ -25,4 +25,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
       - name: Test
-        run: make test config=debug
+        run: make test ssl=libressl config=debug

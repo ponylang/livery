@@ -24,6 +24,10 @@ else
 	PONYC = $(COMPILE_WITH) --debug
 endif
 
+ifdef ssl
+	PONYC += -D$(ssl)
+endif
+
 SOURCE_FILES := $(shell find $(SRC_DIR) -name *.pony)
 EXAMPLES := $(notdir $(shell find $(EXAMPLES_DIR)/* -maxdepth 0 -type d))
 EXAMPLES_SOURCE_FILES := $(shell find $(EXAMPLES_DIR) -name *.pony)

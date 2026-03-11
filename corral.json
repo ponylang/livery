@@ -11,6 +11,17 @@
     "name": "livery"
   },
   "deps": [
-    {}
+    {
+      "locator": "github.com/ponylang/mare.git",
+      "version": "0.1.1"
+    },
+    {
+      "locator": "github.com/ponylang/templates.git",
+      "version": "0.3.0"
+    },
+    {
+      "locator": "github.com/ponylang/json-ng.git",
+      "version": "0.3.0"
+    }
   ]
 }

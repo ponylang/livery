@@ -1,0 +1,16 @@
+{
+  "packages": [
+    "livery"
+  ],
+  "info": {
+    "description": "Live view for Pony",
+    "homepage": "https://github.com/ponylang/livery",
+    "license": "BSD-2-Clause",
+    "documentation_url": "https://ponylang.github.io/livery/",
+    "version": "0.0.0",
+    "name": "livery"
+  },
+  "deps": [
+    {}
+  ]
+}

@@ -1,6 +1,6 @@
 # Livery
 
-Server-side Pony library for building interactive LiveView UIs over WebSocket. Sends full HTML on each state change; the JS client (separate repo) patches the DOM with morphdom.
+Server-side Pony library for building interactive LiveView UIs over WebSocket. Sends full HTML on each state change; the JS client (in `client/`) patches the DOM with morphdom.
 
 ## Building
 
@@ -65,6 +65,7 @@ livery/           # Library package (also the test compilation target)
 examples/
   counter/        # Increment/decrement counter
   ticker/         # PubSub-driven ticker (server push)
+client/           # JavaScript client library (morphdom, event delegation, reconnection)
 ```
 
 ## Conventions

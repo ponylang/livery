@@ -65,6 +65,7 @@ livery/           # Library package (also the test compilation target)
 examples/
   counter/        # Increment/decrement counter
   ticker/         # PubSub-driven ticker (server push via re-render + push_event)
+  form/           # Registration form with live validation (lv-change + lv-submit)
 client/           # JavaScript client library
   src/            # Source modules (wire, events, socket, live-view)
   test/           # vitest tests
@@ -93,7 +94,7 @@ make client-build
 | Module | Role |
 |--------|------|
 | `src/wire.js` | Wire protocol encode/decode, mirrors `_wire_protocol.pony` |
-| `src/events.js` | Event delegation (`lv-click`, `lv-value-*`) via single root listener |
+| `src/events.js` | Event delegation (`lv-click`, `lv-value-*`, `lv-change`, `lv-submit`) via single root listener |
 | `src/socket.js` | WebSocket wrapper with heartbeat (30s interval, 10s ack timeout) and reconnection (exponential backoff, 30s cap) |
 | `src/live-view.js` | Main orchestrator — connects Socket, morphdom, and event delegation |
 | `src/index.js` | Entry point, re-exports `LiveView` |

@@ -18,7 +18,6 @@ export class LiveView {
   constructor(opts) {
     this._target = opts.target;
     this._pushHandlers = {};
-    this._firstRender = true;
     this._events = null;
 
     this._socket = new Socket({
@@ -67,11 +66,10 @@ export class LiveView {
   _handleMessage(msg) {
     switch (msg.type) {
       case "render":
-        if (this._firstRender) {
-          this._target.innerHTML = msg.html;
-          this._firstRender = false;
-        } else {
+        if (this._target.firstElementChild) {
           morphdom(this._target.firstElementChild, msg.html);
+        } else {
+          this._target.innerHTML = msg.html;
         }
         break;
       case "push": {

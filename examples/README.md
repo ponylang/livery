@@ -1,6 +1,6 @@
 # Examples
 
-Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. Each example includes an `index.html` file that connects to the running server via the JavaScript client.
+Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. Each example includes an `index.html` file that connects to the running server via the JavaScript client. The ssr example's `index.html` contains pre-rendered content that the JS client takes over on connect.
 
 ## Running examples
 
@@ -23,6 +23,7 @@ make ssl=openssl_3.0.x examples
 | counter | `./build/release/counter` | 8081 |
 | ticker | `./build/release/ticker` | 8082 |
 | form | `./build/release/form` | 8083 |
+| ssr | `./build/release/ssr` | 8084 |
 
 1. Serve the repo root with a static file server (the HTML shells use relative paths to load the JS client bundle):
 
@@ -35,6 +36,7 @@ Then visit the example in your browser:
 - Counter: `http://localhost:8080/examples/counter/index.html`
 - Ticker: `http://localhost:8080/examples/ticker/index.html`
 - Form: `http://localhost:8080/examples/form/index.html`
+- SSR: `http://localhost:8080/examples/ssr/index.html`
 
 ## [counter](counter/)
 
@@ -47,3 +49,7 @@ Demonstrates server push via `PubSub` and `handle_info`. A `Ticker` actor publis
 ## [form](form/)
 
 Demonstrates form handling with live validation. A registration form uses `lv-change` for real-time field validation as the user types and `lv-submit` for full validation on submit. Field values and error messages are stored as assigns — the template renders both the current input values and per-field error messages. Shows how the existing `handle_event` API handles form data without any additional library types: the client serializes form fields as a JSON payload, and the server extracts them with `JsonNav`.
+
+## [ssr](ssr/)
+
+Demonstrates server-rendered first paint. The `index.html` contains the counter's initial HTML pre-rendered inside the `lv-root` container — the user sees content immediately on page load with no empty-page flash. When the WebSocket connects, the server mounts the same `CounterView` (producing identical HTML), and morphdom silently takes over the pre-rendered DOM. Compare with the counter example to see what server-rendered first paint adds. In production, `PageRenderer.render(factory)` would generate the HTML dynamically in an HTTP handler; this example uses static HTML to demonstrate the client-side takeover without requiring an HTTP server dependency.

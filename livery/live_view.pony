@@ -15,8 +15,13 @@ trait LiveView
   """
   fun ref mount(socket: Socket ref)
     """
-    Called when the WebSocket connection is established. Use
-    `socket.assign()` to set initial state.
+    Called when a connection is established or when the view is rendered
+    for HTTP response via `PageRenderer`. Use `socket.assign()` to set
+    initial state.
+
+    Check `socket.connected()` to distinguish WebSocket mount (true) from
+    HTTP render (false) — for example, to skip subscribing to PubSub topics
+    during HTTP render.
     """
 
   fun ref handle_event(event: String val, payload: json.JsonValue,
@@ -44,4 +49,7 @@ trait LiveView
     may fail (e.g., missing template variable). On failure the framework
     keeps the last successfully rendered HTML and sends an error to the
     client.
+
+    The returned HTML must have a single root element (e.g., wrapped in a
+    `<div>`) for morphdom to work correctly during DOM patching.
     """

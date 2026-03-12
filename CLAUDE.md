@@ -27,17 +27,20 @@ Targets: `make test` (build + run tests + build examples), `make unit-tests` (te
 
 - `LiveView` trait — user implements `mount`, `handle_event`, `handle_info`, `render`
 - `Assigns` — key-value store with dirty tracking, backed by `TemplateValues`
-- `Socket` — user-facing handle passed to lifecycle methods; provides `self()`, `subscribe(topic)`, `unsubscribe(topic)`
+- `Socket` — user-facing handle passed to lifecycle methods; provides `connected()`, `self()`, `subscribe(topic)`, `unsubscribe(topic)`
 - `Factory` — `interface val` for creating `LiveView` instances (lambdas work via structural typing)
 - `Router` / `Routes` — mutable builder freezes into immutable `Routes val`
 - `InfoReceiver` — `interface tag` handle for sending messages to a connection from external actors
 - `PubSub` — actor for topic-based publish-subscribe across connections
 - `Listener` — actor wrapping lori's `TCPListenerActor`
+- `PageRenderer` — primitive that renders a LiveView to HTML without a WebSocket (for server-rendered first paint)
+- `PageRenderFactoryFailed` / `PageRenderFailed` — error primitives returned by `PageRenderer.render()`
 
 ### Internal
 
 - `_Connection` — one actor per client, implements `WebSocketServerActor`. Two-phase init: view is `None` until `on_open` delivers the URI for route lookup. Has `info` behavior for external message delivery; cleans up PubSub subscriptions in `on_closed`.
 - `_WireProtocol` — JSON encode/decode for the client-server wire format.
+- `_NullInfoReceiver` — no-op actor satisfying `InfoReceiver` for disconnected sockets.
 - `_Unreachable` — panic primitive for impossible code paths.
 
 ### Wire Protocol (JSON over WebSocket)
@@ -54,7 +57,9 @@ livery/           # Library package (also the test compilation target)
   assigns.pony    # Assigns class
   socket.pony     # Socket class
   factory.pony    # Factory interface
+  page_renderer.pony # PageRenderer primitive + error types
   info_receiver.pony # InfoReceiver interface
+  _null_info_receiver.pony # No-op InfoReceiver (internal)
   pub_sub.pony    # PubSub actor
   router.pony     # Router + Routes
   listener.pony   # Listener actor
@@ -66,6 +71,7 @@ examples/
   counter/        # Increment/decrement counter
   ticker/         # PubSub-driven ticker (server push via re-render + push_event)
   form/           # Registration form with live validation (lv-change + lv-submit)
+  ssr/            # Server-rendered first paint (pre-rendered counter)
 client/           # JavaScript client library
   src/            # Source modules (wire, events, socket, live-view)
   test/           # vitest tests

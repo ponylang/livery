@@ -22,7 +22,8 @@ trait LiveView
   fun ref handle_event(event: String val, payload: json.JsonValue,
     socket: Socket ref)
     """
-    Called when the client sends a UI event (e.g., a button click). Use
+    Called when the client sends a UI event (e.g., a button click or form
+    change/submission). Use
     `socket.assign()` to update state — the framework re-renders
     automatically if any assigns changed.
     """

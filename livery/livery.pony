@@ -25,6 +25,30 @@ where the view can update assigns and trigger a re-render.
 - Call `Socket.subscribe(topic)` to receive messages from a PubSub topic
 - Subscriptions are automatically cleaned up when the connection closes
 
+## Forms
+
+Form handling works through the existing `handle_event` API — no additional
+library types are needed. The JavaScript client sends form field data as a
+JSON object payload via `lv-change` (fires on every keystroke for real-time
+validation) and `lv-submit` (fires on form submission).
+
+On the server, extract fields with `JsonNav` and validate:
+
+```pony
+fun ref handle_event(event: String val, payload: json.JsonValue,
+  socket: Socket ref)
+=>
+  let nav = json.JsonNav(payload)
+  try
+    let username = nav("username").as_string()?
+    let email = nav("email").as_string()?
+    // validate and assign errors
+  end
+```
+
+Store field values and error messages as assigns so the template renders both
+the current input values and per-field feedback.
+
 ## Getting Started
 
 1. Implement the `LiveView` trait on a class

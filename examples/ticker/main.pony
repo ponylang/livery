@@ -9,8 +9,11 @@ class TickerView is LiveView
   A LiveView that displays a count incremented by an external ticker.
 
   Subscribes to the `"tick"` PubSub topic in `mount`. Each time the
-  `Ticker` actor publishes to that topic, `handle_info` fires and
-  increments the counter.
+  `Ticker` actor publishes to that topic, `handle_info` fires,
+  increments the counter (triggering a re-render via assigns), and calls
+  `push_event` to send the raw tick count to the client. This
+  demonstrates both push mechanisms: server-rendered DOM updates and
+  client-side event handling via `on()`.
   """
   let _template: HtmlTemplate val
 
@@ -36,6 +39,10 @@ class TickerView is LiveView
     try
       let current = socket.get_assign("count")?.string()?.i64()?
       socket.assign("count", (current + 1).string())
+    end
+    match message
+    | let n: U64 =>
+      socket.push_event("tick", JsonObject.update("timer_count", n.i64()))
     end
 
   fun box render(assigns: Assigns box): String ? =>

@@ -64,7 +64,7 @@ livery/           # Library package (also the test compilation target)
   _test.pony      # All tests (single runner)
 examples/
   counter/        # Increment/decrement counter
-  ticker/         # PubSub-driven ticker (server push)
+  ticker/         # PubSub-driven ticker (server push via re-render + push_event)
 client/           # JavaScript client library
   src/            # Source modules (wire, events, socket, live-view)
   test/           # vitest tests

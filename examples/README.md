@@ -40,4 +40,4 @@ Implements a simple increment/decrement counter as a `LiveView`. Registers a sin
 
 ## [ticker](ticker/)
 
-Demonstrates server push via `PubSub` and `handle_info`. A `Ticker` actor publishes to the `"tick"` topic every second. The `TickerView` subscribes in `mount` and increments a counter each time `handle_info` fires. Shows how external actors drive LiveView updates without any client interaction.
+Demonstrates server push via `PubSub` and `handle_info`. A `Ticker` actor publishes to the `"tick"` topic every second. The `TickerView` subscribes in `mount` and increments a counter each time `handle_info` fires — this drives a re-render via assigns. It also calls `push_event` to send the raw tick count to the client, where a JavaScript `on()` handler updates a separate DOM element outside the LiveView container. Shows the two complementary push mechanisms: server-rendered DOM updates (assigns + re-render) and client-side event handling (`push_event` + `on()`).

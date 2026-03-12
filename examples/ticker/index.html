@@ -3,12 +3,18 @@
 <head><title>Ticker - Livery Example</title></head>
 <body>
   <div id="lv-root"></div>
+  <p id="push-log">Waiting for push events...</p>
   <script src="../../client/dist/livery.iife.js"></script>
   <script>
-    new LiveView({
+    var lv = new LiveView({
       url: "ws://localhost:8082/ticker",
       target: document.getElementById("lv-root")
-    }).connect();
+    });
+    lv.on("tick", function(payload) {
+      document.getElementById("push-log").textContent =
+        "Last push: timer tick #" + payload.timer_count;
+    });
+    lv.connect();
   </script>
 </body>
 </html>

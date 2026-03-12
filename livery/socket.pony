@@ -12,7 +12,8 @@ class Socket
   let _assigns: Assigns ref
   let _pending_events: Array[(String val, json.JsonValue)] ref
   let _self: InfoReceiver tag
-  let _pub_sub: PubSub tag
+  let _pub_sub: (PubSub tag | None)
+  let _connected: Bool
 
   new create(assigns: Assigns ref,
     pending_events: Array[(String val, json.JsonValue)] ref,
@@ -22,6 +23,16 @@ class Socket
     _pending_events = pending_events
     _self = self'
     _pub_sub = pub_sub
+    _connected = true
+
+  new _for_render(assigns: Assigns ref,
+    pending_events: Array[(String val, json.JsonValue)] ref)
+  =>
+    _assigns = assigns
+    _pending_events = pending_events
+    _self = _NullInfoReceiver
+    _pub_sub = None
+    _connected = false
 
   fun ref assign(key: String,
     value: (String | templates.TemplateValue))
@@ -54,16 +65,35 @@ class Socket
     """
     _self
 
+  fun box connected(): Bool =>
+    """
+    True when this socket is backed by a live WebSocket connection. False
+    during HTTP rendering via `PageRenderer`, where PubSub operations are
+    no-ops and push events are silently dropped.
+
+    Check this in `mount` to distinguish the two contexts — for example,
+    to skip subscribing to PubSub topics during HTTP render.
+    """
+    _connected
+
   fun ref subscribe(topic: String) =>
     """
     Subscribe this connection to a PubSub topic. Messages published to
     the topic will arrive via `LiveView.handle_info`. Subscriptions are
     automatically cleaned up when the connection closes.
+
+    No-op on disconnected sockets (during HTTP rendering).
     """
-    _pub_sub.subscribe(topic, _self)
+    match _pub_sub
+    | let ps: PubSub tag => ps.subscribe(topic, _self)
+    end
 
   fun ref unsubscribe(topic: String) =>
     """
     Unsubscribe this connection from a PubSub topic.
+
+    No-op on disconnected sockets (during HTTP rendering).
     """
-    _pub_sub.unsubscribe(topic, _self)
+    match _pub_sub
+    | let ps: PubSub tag => ps.unsubscribe(topic, _self)
+    end

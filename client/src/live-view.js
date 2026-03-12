@@ -67,12 +67,12 @@ export class LiveView {
   _handleMessage(msg) {
     switch (msg.type) {
       case "render":
-        if (this._firstRender) {
+        if (this._firstRender && !this._target.firstElementChild) {
           this._target.innerHTML = msg.html;
-          this._firstRender = false;
         } else {
           morphdom(this._target.firstElementChild, msg.html);
         }
+        this._firstRender = false;
         break;
       case "push": {
         const handler = this._pushHandlers[msg.event];

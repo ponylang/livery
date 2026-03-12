@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>SSR Counter - Livery Example</title></head>
+<body>
+  <div id="lv-root">
+    <div>
+      <h1>Count: 0</h1>
+      <button lv-click="increment">+</button>
+      <button lv-click="decrement">-</button>
+    </div>
+  </div>
+  <script src="../../client/dist/livery.iife.js"></script>
+  <script>
+    new LiveView({
+      url: "ws://localhost:8084/ssr",
+      target: document.getElementById("lv-root")
+    }).connect();
+  </script>
+</body>
+</html>

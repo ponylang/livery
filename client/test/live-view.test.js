@@ -221,6 +221,51 @@ describe("LiveView", () => {
     Math.random.mockRestore();
   });
 
+  it("uses morphdom for first render when target has pre-rendered content", () => {
+    // Simulate pre-rendered HTML already in the target
+    target.innerHTML = '<div id="app"><h1>Count: 0</h1></div>';
+    const preRenderedDiv = target.querySelector("#app");
+
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    // First render — same HTML as pre-rendered, should morphdom (not innerHTML)
+    ws().simulateMessage('{"t":"render","html":"<div id=\\"app\\"><h1>Count: 0</h1></div>"}');
+
+    // The original DOM node should be preserved (morphdom patched, not replaced)
+    expect(target.querySelector("#app")).toBe(preRenderedDiv);
+  });
+
+  it("uses innerHTML for first render when target is empty", () => {
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    ws().simulateMessage('{"t":"render","html":"<div>hello</div>"}');
+
+    expect(target.innerHTML).toBe("<div>hello</div>");
+  });
+
+  it("uses morphdom for subsequent renders after pre-rendered takeover", () => {
+    // Pre-rendered content
+    target.innerHTML = '<div id="app"><h1>Count: 0</h1></div>';
+
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    // First render — takeover via morphdom
+    ws().simulateMessage('{"t":"render","html":"<div id=\\"app\\"><h1>Count: 0</h1></div>"}');
+    const div = target.querySelector("#app");
+
+    // Second render — still morphdom
+    ws().simulateMessage('{"t":"render","html":"<div id=\\"app\\"><h1>Count: 1</h1></div>"}');
+
+    expect(target.querySelector("#app")).toBe(div);
+    expect(target.querySelector("h1").textContent).toBe("Count: 1");
+  });
+
   it("does not throw on error messages", () => {
     const lv = createLiveView();
     lv.connect();

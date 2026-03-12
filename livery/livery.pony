@@ -49,6 +49,35 @@ fun ref handle_event(event: String val, payload: json.JsonValue,
 Store field values and error messages as assigns so the template renders both
 the current input values and per-field feedback.
 
+## Server-Rendered First Paint
+
+Eliminate the empty-page flash on initial load by rendering the LiveView to
+HTML at HTTP request time. The browser receives a fully populated page, then
+the JS client silently takes over when the WebSocket connects.
+
+Use `PageRenderer` to render a view without a WebSocket connection:
+
+```pony
+let factory: Factory = {(): LiveView ref^ ? => MyView?} val
+match PageRenderer.render(factory)
+| let html: String val =>
+  // Embed html in the HTTP response inside the lv-root container
+| let err: PageRenderFactoryFailed =>
+  // Factory failed to create the view
+| let err: PageRenderFailed =>
+  // View's render method failed
+end
+```
+
+The rendered view sees a disconnected socket — `connected()` returns false,
+PubSub operations are no-ops, and push events are silently dropped. Check
+`socket.connected()` in `mount` to vary behavior between HTTP render and
+WebSocket.
+
+When the JS client opens the WebSocket, the server mounts a fresh view
+(producing identical initial HTML), and morphdom silently patches the
+pre-rendered DOM with no visible change.
+
 ## Getting Started
 
 1. Implement the `LiveView` trait on a class

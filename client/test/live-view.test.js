@@ -266,6 +266,42 @@ describe("LiveView", () => {
     expect(target.querySelector("h1").textContent).toBe("Count: 1");
   });
 
+  it("morphs correctly after reconnection with pre-rendered content", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    // Pre-rendered content
+    target.innerHTML = '<div id="app"><h1>Count: 0</h1></div>';
+
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    // First render — takeover via morphdom
+    ws().simulateMessage('{"t":"render","html":"<div id=\\"app\\"><h1>Count: 0</h1></div>"}');
+    const div = target.querySelector("#app");
+
+    // Simulate unexpected close and reconnect
+    ws().simulateClose();
+    vi.advanceTimersByTime(1000);
+
+    expect(MockWebSocket.instances).toHaveLength(2);
+    ws().simulateOpen();
+
+    // Server mounts fresh view and sends initial render
+    ws().simulateMessage('{"t":"render","html":"<div id=\\"app\\"><h1>Count: 0</h1></div>"}');
+
+    // Same DOM node preserved through reconnection
+    expect(target.querySelector("#app")).toBe(div);
+    expect(target.querySelector("h1").textContent).toBe("Count: 0");
+
+    // Subsequent update after reconnect works
+    ws().simulateMessage('{"t":"render","html":"<div id=\\"app\\"><h1>Count: 5</h1></div>"}');
+    expect(target.querySelector("#app")).toBe(div);
+    expect(target.querySelector("h1").textContent).toBe("Count: 5");
+
+    Math.random.mockRestore();
+  });
+
   it("does not throw on error messages", () => {
     const lv = createLiveView();
     lv.connect();

@@ -43,6 +43,7 @@ actor \nodoc\ Main is TestList
     test(_TestPageRendererSuccess)
     test(_TestPageRendererFactoryFailed)
     test(_TestPageRendererRenderFailed)
+    test(_TestPageRendererDisconnectedSocket)
     // Socket + PubSub integration tests
     test(_TestSocketSubscribeDeliver)
 
@@ -551,8 +552,7 @@ class \nodoc\ _TestPageRendererSuccess is UnitTest
       {(): LiveView ref^ => _RenderTestView} val
     match PageRenderer.render(factory)
     | let html: String val =>
-      h.assert_true(html.contains("hello"),
-        "rendered HTML should contain the mounted assign value")
+      h.assert_eq[String]("hello", html)
     | let err: PageRenderError =>
       h.fail("expected success, got error")
     end
@@ -583,6 +583,41 @@ class \nodoc\ _TestPageRendererRenderFailed is UnitTest
     | let _: PageRenderFactoryFailed =>
       h.fail("expected PageRenderFailed, got PageRenderFactoryFailed")
     | let _: PageRenderFailed => None
+    end
+
+class \nodoc\ _ConnectedBranchView is LiveView
+  new create() => None
+
+  fun ref mount(socket: Socket ref) =>
+    if socket.connected() then
+      socket.assign("mode", "live")
+    else
+      socket.assign("mode", "static")
+    end
+
+  fun ref handle_event(event: String val, payload: json.JsonValue,
+    socket: Socket ref)
+  =>
+    None
+
+  fun box render(assigns: Assigns box): String =>
+    try
+      assigns("mode")?.string()?
+    else
+      ""
+    end
+
+class \nodoc\ _TestPageRendererDisconnectedSocket is UnitTest
+  fun name(): String => "page_renderer/disconnected_socket"
+
+  fun apply(h: TestHelper) =>
+    let factory: Factory =
+      {(): LiveView ref^ => _ConnectedBranchView} val
+    match PageRenderer.render(factory)
+    | let html: String val =>
+      h.assert_eq[String]("static", html)
+    | let err: PageRenderError =>
+      h.fail("expected success, got error")
     end
 
 // --- Socket + PubSub integration tests ---

@@ -17,13 +17,13 @@ make ssl=openssl_3.0.x examples
 ./build/release/counter
 ```
 
-1. Open the example's `index.html` in a browser. You can open the file directly or serve it with a static file server:
+1. Serve the repo root with a static file server (the HTML shells use relative paths to load the JS client bundle):
 
 ```sh
-python3 -m http.server 8080 -d examples/counter
+python3 -m http.server 8080
 ```
 
-Then visit `http://localhost:8080` in your browser.
+Then visit `http://localhost:8080/examples/counter/index.html` in your browser.
 
 ## [counter](counter/)
 

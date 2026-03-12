@@ -2,3 +2,5 @@ _repos/
 _corral/
 build/
 lock.json
+client/node_modules/
+client/dist/

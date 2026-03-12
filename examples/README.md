@@ -1,6 +1,29 @@
 # Examples
 
-Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library.
+Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. Each example includes an `index.html` file that connects to the running server via the JavaScript client.
+
+## Running examples
+
+1. Build the JavaScript client:
+
+```
+cd client && npm install && npm run build
+```
+
+2. Compile and start the Pony server for an example (e.g., counter):
+
+```
+make ssl=openssl_3.0.x examples
+./build/release/counter
+```
+
+3. Open the example's `index.html` in a browser. You can open the file directly or serve it with a static file server:
+
+```
+python3 -m http.server 8080 -d examples/counter
+```
+
+Then visit `http://localhost:8080` in your browser.
 
 ## [counter](counter/)
 

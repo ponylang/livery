@@ -10,7 +10,7 @@ make test ssl=openssl_3.0.x
 
 The `ssl` flag is required because mare (WebSocket transport) depends on the ssl package transitively. On machines with OpenSSL 3.x, use `ssl=openssl_3.0.x`.
 
-Targets: `make test` (build + run tests + build examples), `make unit-tests` (tests only), `make examples` (examples only), `make clean`.
+Targets: `make test` (build + run tests + build examples), `make unit-tests` (tests only), `make examples` (examples only), `make clean`. JS client targets: `make client-test`, `make client-build`.
 
 ## Dependencies
 
@@ -65,8 +65,52 @@ livery/           # Library package (also the test compilation target)
 examples/
   counter/        # Increment/decrement counter
   ticker/         # PubSub-driven ticker (server push)
-client/           # JavaScript client library (morphdom, event delegation, reconnection)
+client/           # JavaScript client library
+  src/            # Source modules (wire, events, socket, live-view)
+  test/           # vitest tests
+  dist/           # Build output (gitignored)
 ```
+
+## JavaScript Client
+
+The JS client lives in `client/` and connects to the Livery server over WebSocket, patching the DOM with morphdom on render messages.
+
+### Building and testing
+
+```
+cd client && npm install && npm test    # Run tests
+cd client && npm run build              # Build ESM + IIFE bundles to dist/
+```
+
+Docker-based (no local Node.js required):
+```
+make client-test
+make client-build
+```
+
+### Architecture
+
+| Module | Role |
+|--------|------|
+| `src/wire.js` | Wire protocol encode/decode, mirrors `_wire_protocol.pony` |
+| `src/events.js` | Event delegation (`lv-click`, `lv-value-*`) via single root listener |
+| `src/socket.js` | WebSocket wrapper with heartbeat (30s interval, 10s ack timeout) and reconnection (exponential backoff, 30s cap) |
+| `src/live-view.js` | Main orchestrator — connects Socket, morphdom, and event delegation |
+| `src/index.js` | Entry point, re-exports `LiveView` |
+
+### Distribution
+
+- `dist/livery.esm.js` — ES module
+- `dist/livery.iife.js` — IIFE bundle exposing `window.LiveView` for `<script>` tags
+
+### Dependencies
+
+| Package | Version | Role |
+|---------|---------|------|
+| morphdom | ^2.7.4 | DOM diffing/patching |
+| esbuild | ^0.25 | Bundler (dev) |
+| vitest | ^3 | Test framework (dev) |
+| jsdom | ^26 | DOM environment for tests (dev, via vitest) |
 
 ## Conventions
 

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><title>Ticker - Livery Example</title></head>
+<body>
+  <div id="lv-root"></div>
+  <script src="../../client/dist/livery.iife.js"></script>
+  <script>
+    new LiveView({
+      url: "ws://localhost:8082/ticker",
+      target: document.getElementById("lv-root")
+    }).connect();
+  </script>
+</body>
+</html>

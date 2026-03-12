@@ -59,6 +59,15 @@ $(docs_dir): $(SOURCE_FILES)
 
 docs: $(docs_dir)
 
+client-install:
+	docker run --rm -v "$$(pwd)/client:/app" -w /app node:22-slim npm install
+
+client-test: client-install
+	docker run --rm -v "$$(pwd)/client:/app" -w /app node:22-slim npm test
+
+client-build: client-install
+	docker run --rm -v "$$(pwd)/client:/app" -w /app node:22-slim npm run build
+
 TAGS:
 	ctags --recurse=yes $(SRC_DIR)
 
@@ -67,4 +76,4 @@ all: test
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-.PHONY: all examples clean TAGS test
+.PHONY: all examples clean TAGS test client-install client-test client-build

@@ -10,12 +10,18 @@ Each subdirectory is a self-contained Pony program demonstrating a different par
 cd client && npm install && npm run build
 ```
 
-1. Compile and start the Pony server for an example (e.g., counter):
+1. Compile the examples:
 
 ```sh
 make ssl=openssl_3.0.x examples
-./build/release/counter
 ```
+
+1. Start the Pony server for the example you want to run:
+
+| Example | Command | Port |
+|---------|---------|------|
+| counter | `./build/release/counter` | 8081 |
+| ticker | `./build/release/ticker` | 8082 |
 
 1. Serve the repo root with a static file server (the HTML shells use relative paths to load the JS client bundle):
 
@@ -23,7 +29,10 @@ make ssl=openssl_3.0.x examples
 python3 -m http.server 8080
 ```
 
-Then visit `http://localhost:8080/examples/counter/index.html` in your browser.
+Then visit the example in your browser:
+
+- Counter: `http://localhost:8080/examples/counter/index.html`
+- Ticker: `http://localhost:8080/examples/ticker/index.html`
 
 ## [counter](counter/)
 

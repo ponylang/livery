@@ -6,20 +6,20 @@ Each subdirectory is a self-contained Pony program demonstrating a different par
 
 1. Build the JavaScript client:
 
-```
+```sh
 cd client && npm install && npm run build
 ```
 
-2. Compile and start the Pony server for an example (e.g., counter):
+1. Compile and start the Pony server for an example (e.g., counter):
 
-```
+```sh
 make ssl=openssl_3.0.x examples
 ./build/release/counter
 ```
 
-3. Open the example's `index.html` in a browser. You can open the file directly or serve it with a static file server:
+1. Open the example's `index.html` in a browser. You can open the file directly or serve it with a static file server:
 
-```
+```sh
 python3 -m http.server 8080 -d examples/counter
 ```
 

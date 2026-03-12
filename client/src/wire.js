@@ -1,0 +1,51 @@
+/**
+ * Encode a client event message.
+ *
+ * @param {string} event - Event name (e.g., "increment")
+ * @param {object} payload - Event payload
+ * @returns {string} JSON string
+ */
+export function encodeEvent(event, payload) {
+  return JSON.stringify({ t: "event", e: event, p: payload });
+}
+
+/**
+ * Encode a client heartbeat message.
+ *
+ * @returns {string} JSON string
+ */
+export function encodeHeartbeat() {
+  return JSON.stringify({ t: "heartbeat" });
+}
+
+/**
+ * Decode a server message from JSON.
+ *
+ * @param {string} data - Raw JSON string from server
+ * @returns {{ type: "render", html: string }
+ *          | { type: "heartbeat_ack" }
+ *          | { type: "push", event: string, payload: * }
+ *          | { type: "error", reason: string }
+ *          | { type: "unknown" }}
+ */
+export function decodeServerMessage(data) {
+  let obj;
+  try {
+    obj = JSON.parse(data);
+  } catch {
+    return { type: "unknown" };
+  }
+
+  switch (obj.t) {
+    case "render":
+      return { type: "render", html: obj.html };
+    case "heartbeat_ack":
+      return { type: "heartbeat_ack" };
+    case "push":
+      return { type: "push", event: obj.e, payload: obj.p };
+    case "error":
+      return { type: "error", reason: obj.reason };
+    default:
+      return { type: "unknown" };
+  }
+}

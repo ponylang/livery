@@ -26,3 +26,18 @@ jobs:
       - uses: actions/checkout@v6.0.2
       - name: Test
         run: make test ssl=libressl config=debug
+
+  js-client:
+    name: Test JS client
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-node@v6.3.0
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npm test
+      - run: npm run build

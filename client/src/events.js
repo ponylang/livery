@@ -32,18 +32,37 @@ function findAncestorWithAttr(el, root, attr) {
 }
 
 /**
+ * Walk up the DOM from `el` to find the nearest `lv-target` attribute,
+ * stopping before exiting `root`.
+ *
+ * @param {HTMLElement} el - Starting element
+ * @param {HTMLElement} root - Boundary (exclusive)
+ * @returns {string|null} Target ID or null
+ */
+function findTarget(el, root) {
+  while (el && el !== root.parentNode) {
+    if (el.hasAttribute && el.hasAttribute("lv-target")) {
+      return el.getAttribute("lv-target");
+    }
+    el = el.parentNode;
+  }
+  return null;
+}
+
+/**
  * Set up event delegation on a root element.
  *
  * Listens for clicks, form input changes, and form submissions. Walks up
  * the DOM from the target to find elements with `lv-click`, `lv-change`,
- * or `lv-submit` attributes.
+ * or `lv-submit` attributes. When `lv-target` is present on the element
+ * or an ancestor, the target ID is included in the event callback.
  *
  * - `lv-click`: collects `lv-value-*` attributes into the payload
  * - `lv-change`: collects all named form fields into the payload
  * - `lv-submit`: prevents default submission, collects all named form fields
  *
  * @param {HTMLElement} root - Container element for delegation
- * @param {function(string, object): void} sendEvent - Called with (eventName, payload)
+ * @param {function(string, object, string|null): void} sendEvent - Called with (eventName, payload, target)
  * @returns {{ destroy: function }} Cleanup handle
  */
 export function setupEventDelegation(root, sendEvent) {
@@ -59,7 +78,8 @@ export function setupEventDelegation(root, sendEvent) {
             payload[key] = attr.value;
           }
         }
-        sendEvent(eventName, payload);
+        const target = findTarget(el, root);
+        sendEvent(eventName, payload, target);
         return;
       }
       el = el.parentNode;
@@ -69,7 +89,8 @@ export function setupEventDelegation(root, sendEvent) {
   function handleInput(event) {
     const form = findAncestorWithAttr(event.target, root, "lv-change");
     if (form) {
-      sendEvent(form.getAttribute("lv-change"), collectFormData(form));
+      const target = findTarget(form, root);
+      sendEvent(form.getAttribute("lv-change"), collectFormData(form), target);
     }
   }
 
@@ -77,7 +98,8 @@ export function setupEventDelegation(root, sendEvent) {
     const form = findAncestorWithAttr(event.target, root, "lv-submit");
     if (form) {
       event.preventDefault();
-      sendEvent(form.getAttribute("lv-submit"), collectFormData(form));
+      const target = findTarget(form, root);
+      sendEvent(form.getAttribute("lv-submit"), collectFormData(form), target);
     }
   }
 

@@ -11,6 +11,23 @@ describe("encodeEvent", () => {
     const result = JSON.parse(encodeEvent("click", {}));
     expect(result).toEqual({ t: "event", e: "click", p: {} });
   });
+
+  it("includes c field when target is provided", () => {
+    const result = JSON.parse(encodeEvent("toggle", {}, "todo-3"));
+    expect(result).toEqual({ t: "event", e: "toggle", p: {}, c: "todo-3" });
+  });
+
+  it("omits c field when target is null", () => {
+    const result = JSON.parse(encodeEvent("click", {}, null));
+    expect(result).toEqual({ t: "event", e: "click", p: {} });
+    expect(result).not.toHaveProperty("c");
+  });
+
+  it("omits c field when target is undefined", () => {
+    const result = JSON.parse(encodeEvent("click", {}));
+    expect(result).toEqual({ t: "event", e: "click", p: {} });
+    expect(result).not.toHaveProperty("c");
+  });
 });
 
 describe("encodeHeartbeat", () => {

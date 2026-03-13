@@ -1,5 +1,6 @@
 use "pony_test"
 use "pony_check"
+use templates = "templates"
 use json = "json"
 
 actor \nodoc\ Main is TestList
@@ -44,8 +45,41 @@ actor \nodoc\ Main is TestList
     test(_TestPageRendererFactoryFailed)
     test(_TestPageRendererRenderFailed)
     test(_TestPageRendererDisconnectedSocket)
+    test(_TestPageRendererWithComponents)
     // Socket + PubSub integration tests
     test(_TestSocketSubscribeDeliver)
+    // ComponentSocket tests
+    test(_TestComponentSocketAssignRoundtrip)
+    test(_TestComponentSocketPushEvent)
+    // Component registry tests
+    test(_TestRegistryRegisterAndLookup)
+    test(_TestRegistryMaxComponents)
+    test(_TestRegistryUnregister)
+    test(_TestRegistryDuplicateIdReplace)
+    test(_TestRegistryDuplicateIdAtCapacity)
+    test(_TestRegistryRegisterAfterUnregister)
+    // Component event routing tests
+    test(_TestRegistryHandleEventFound)
+    test(_TestRegistryHandleEventNotFound)
+    // Component rendering tests
+    test(_TestRegistryRenderChanged)
+    test(_TestRegistryRenderUnchangedCached)
+    test(_TestRegistryRenderFailure)
+    test(_TestRegistryPopulateComponentHtml)
+    // Wire protocol component target tests
+    test(_TestDecodeEventWithTarget)
+    test(_TestDecodeEventWithoutTarget)
+    test(_TestDecodeEventNonStringTarget)
+    // Assigns component HTML tests
+    test(_TestAssignsComponentHtml)
+    test(_TestAssignsComponentHtmlUnknown)
+    test(_TestAssignsClearComponentHtml)
+    test(_TestAssignsComponentHtmlSeparateNamespace)
+    test(_TestAssignsRenderValues)
+    // Security tests
+    test(_TestRegistryEmptyStringTarget)
+    test(_TestRegistryLongTarget)
+    test(_TestComponentIsolation)
 
 // --- Test helpers ---
 
@@ -374,7 +408,9 @@ class \nodoc\ _TestSocketPushEvent is UnitTest
   fun apply(h: TestHelper) ? =>
     let assigns = Assigns
     let pending = Array[(String val, json.JsonValue)]
-    let socket = Socket(assigns, pending, _DummyInfoReceiver, PubSub)
+    let components = _ComponentRegistry(pending)
+    let socket = Socket(assigns, pending, _DummyInfoReceiver, PubSub,
+      components)
     socket.push_event("test_event", "payload_value")
 
     h.assert_eq[USize](1, pending.size())
@@ -488,7 +524,9 @@ class \nodoc\ _TestSocketConnectedTrue is UnitTest
   fun apply(h: TestHelper) =>
     let assigns = Assigns
     let pending = Array[(String val, json.JsonValue)]
-    let socket = Socket(assigns, pending, _DummyInfoReceiver, PubSub)
+    let components = _ComponentRegistry(pending)
+    let socket = Socket(assigns, pending, _DummyInfoReceiver, PubSub,
+      components)
     h.assert_true(socket.connected(),
       "socket created via create should be connected")
 
@@ -620,6 +658,44 @@ class \nodoc\ _TestPageRendererDisconnectedSocket is UnitTest
       h.fail("expected success, got error")
     end
 
+class \nodoc\ _ComponentView is LiveView
+  """
+  View that registers a component during mount and renders its HTML.
+  """
+  new create() => None
+
+  fun ref mount(socket: Socket ref) =>
+    let comp = _TestComponent
+    if socket.register_component("c1", comp) then
+      socket.update_component("c1",
+        recover val
+          let d = Array[(String, (String | templates.TemplateValue))]
+          d.push(("greeting", "from_component"))
+          d
+        end)
+    end
+
+  fun ref handle_event(event: String val, payload: json.JsonValue,
+    socket: Socket ref)
+  =>
+    None
+
+  fun box render(assigns: Assigns box): String ? =>
+    assigns.component_html("c1")?
+
+class \nodoc\ _TestPageRendererWithComponents is UnitTest
+  fun name(): String => "page_renderer/with_components"
+
+  fun apply(h: TestHelper) =>
+    let factory: Factory =
+      {(): LiveView ref^ => _ComponentView} val
+    match PageRenderer.render(factory)
+    | let html: String val =>
+      h.assert_eq[String]("from_component", html)
+    | let err: PageRenderError =>
+      h.fail("expected success, got error")
+    end
+
 // --- Socket + PubSub integration tests ---
 
 class \nodoc\ _TestSocketSubscribeDeliver is UnitTest
@@ -631,6 +707,449 @@ class \nodoc\ _TestSocketSubscribeDeliver is UnitTest
     let pending = Array[(String val, json.JsonValue)]
     let receiver = _TestInfoReceiver(h)
     let pub_sub = PubSub
-    let socket = Socket(assigns, pending, receiver, pub_sub)
+    let components = _ComponentRegistry(pending)
+    let socket = Socket(assigns, pending, receiver, pub_sub, components)
     socket.subscribe("test_topic")
     pub_sub.publish("test_topic", "hello")
+
+// --- Component test helpers ---
+
+class \nodoc\ _TestComponent is LiveComponent
+  """
+  Minimal test component that renders a greeting from its assigns.
+  """
+  var mount_called: Bool = false
+
+  new create() => None
+
+  fun ref mount(socket: ComponentSocket ref) =>
+    mount_called = true
+
+  fun ref handle_event(event: String val, payload: json.JsonValue,
+    socket: ComponentSocket ref)
+  =>
+    match event
+    | "set_value" =>
+      try
+        let nav = json.JsonNav(payload)
+        let v = nav("v").as_string()?
+        socket.assign("value", v)
+      end
+    end
+
+  fun box render(assigns: Assigns box): String =>
+    try
+      assigns("greeting")?.string()?
+    else
+      ""
+    end
+
+class \nodoc\ _FailingComponent is LiveComponent
+  """
+  Component whose render always fails.
+  """
+  new create() => None
+
+  fun ref mount(socket: ComponentSocket ref) => None
+
+  fun ref handle_event(event: String val, payload: json.JsonValue,
+    socket: ComponentSocket ref)
+  =>
+    None
+
+  fun box render(assigns: Assigns box): String ? =>
+    error
+
+// --- ComponentSocket tests ---
+
+class \nodoc\ _TestComponentSocketAssignRoundtrip is UnitTest
+  fun name(): String => "component_socket/assign_roundtrip"
+
+  fun apply(h: TestHelper) ? =>
+    let assigns = Assigns
+    let pending = Array[(String val, json.JsonValue)]
+    let socket = ComponentSocket(assigns, pending)
+    socket.assign("key", "value")
+    let retrieved = socket.get_assign("key")?.string()?
+    h.assert_eq[String]("value", retrieved)
+
+class \nodoc\ _TestComponentSocketPushEvent is UnitTest
+  fun name(): String => "component_socket/push_event"
+
+  fun apply(h: TestHelper) ? =>
+    let assigns = Assigns
+    let pending = Array[(String val, json.JsonValue)]
+    let socket = ComponentSocket(assigns, pending)
+    socket.push_event("notify", "data")
+
+    h.assert_eq[USize](1, pending.size())
+    (let event, _) = pending(0)?
+    h.assert_eq[String val]("notify", event)
+
+// --- Component registry tests ---
+
+class \nodoc\ _TestRegistryRegisterAndLookup is UnitTest
+  fun name(): String => "registry/register_and_lookup"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    let component = _TestComponent
+    component.mount_called = false
+    h.assert_true(registry.register("c1", component))
+    h.assert_true(registry.has("c1"))
+    h.assert_eq[USize](1, registry.size())
+    h.assert_true(component.mount_called,
+      "mount should be called during registration")
+
+class \nodoc\ _TestRegistryMaxComponents is UnitTest
+  fun name(): String => "registry/max_components"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending where max_components = 2)
+    h.assert_true(registry.register("c1", _TestComponent))
+    h.assert_true(registry.register("c2", _TestComponent))
+    h.assert_false(registry.register("c3", _TestComponent),
+      "should reject registration at capacity")
+    h.assert_eq[USize](2, registry.size())
+
+class \nodoc\ _TestRegistryUnregister is UnitTest
+  fun name(): String => "registry/unregister"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    registry.register("c1", _TestComponent)
+    registry.unregister("c1")
+    h.assert_false(registry.has("c1"))
+    h.assert_eq[USize](0, registry.size())
+
+class \nodoc\ _TestRegistryDuplicateIdReplace is UnitTest
+  fun name(): String => "registry/duplicate_id_replace"
+
+  fun apply(h: TestHelper) ? =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    let c1 = _TestComponent
+    let c2 = _TestComponent
+    registry.register("same", c1)
+    registry.register("same", c2)
+    h.assert_eq[USize](1, registry.size())
+    // The new component should be active — verify by checking its render
+    // output (c2's assigns are fresh, so render returns "")
+    let html = registry.component_html("same")?
+    h.assert_eq[String]("", html)
+
+class \nodoc\ _TestRegistryDuplicateIdAtCapacity is UnitTest
+  fun name(): String => "registry/duplicate_id_at_capacity"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending where max_components = 1)
+    registry.register("c1", _TestComponent)
+    // Re-registering existing ID at capacity should succeed (replacement)
+    h.assert_true(registry.register("c1", _TestComponent),
+      "replacing existing ID at capacity should succeed")
+    h.assert_eq[USize](1, registry.size())
+
+class \nodoc\ _TestRegistryRegisterAfterUnregister is UnitTest
+  fun name(): String => "registry/register_after_unregister"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending where max_components = 1)
+    registry.register("c1", _TestComponent)
+    registry.unregister("c1")
+    h.assert_true(registry.register("c2", _TestComponent),
+      "slot should be freed after unregister")
+
+// --- Component event routing tests ---
+
+class \nodoc\ _TestRegistryHandleEventFound is UnitTest
+  fun name(): String => "registry/handle_event_found"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    registry.register("c1", _TestComponent)
+    let payload = json.JsonObject.update("v", "updated")
+    h.assert_true(registry.handle_event("c1", "set_value", payload))
+
+class \nodoc\ _TestRegistryHandleEventNotFound is UnitTest
+  fun name(): String => "registry/handle_event_not_found"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    h.assert_false(registry.handle_event("nonexistent", "click", None))
+
+// --- Component rendering tests ---
+
+class \nodoc\ _TestRegistryRenderChanged is UnitTest
+  fun name(): String => "registry/render_changed"
+
+  fun apply(h: TestHelper) ? =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    let component = _TestComponent
+    registry.register("c1", component)
+
+    // Update assigns to trigger change
+    let data: Array[(String, (String | templates.TemplateValue))] val =
+      recover val
+        let d = Array[(String, (String | templates.TemplateValue))]
+        d.push(("greeting", "hello"))
+        d
+      end
+    registry.update("c1", data)
+
+    let changed = registry.render_all()
+    h.assert_true(changed, "render_all should report changes")
+    let html = registry.component_html("c1")?
+    h.assert_eq[String]("hello", html)
+
+class \nodoc\ _TestRegistryRenderUnchangedCached is UnitTest
+  fun name(): String => "registry/render_unchanged_cached"
+
+  fun apply(h: TestHelper) ? =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    registry.register("c1", _TestComponent)
+
+    // Set greeting and render
+    let data: Array[(String, (String | templates.TemplateValue))] val =
+      recover val
+        let d = Array[(String, (String | templates.TemplateValue))]
+        d.push(("greeting", "cached"))
+        d
+      end
+    registry.update("c1", data)
+    registry.render_all()
+
+    // Second render_all with no changes should return false
+    let changed = registry.render_all()
+    h.assert_false(changed, "render_all should report no changes")
+    // Cached HTML should still be there
+    let html = registry.component_html("c1")?
+    h.assert_eq[String]("cached", html)
+
+class \nodoc\ _TestRegistryRenderFailure is UnitTest
+  fun name(): String => "registry/render_failure"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    registry.register("fail", _FailingComponent)
+    let errors = registry.flush_render_errors()
+    h.assert_eq[USize](1, errors.size(),
+      "initial render failure should produce an error")
+    try
+      h.assert_true(errors(0)?.contains("fail"))
+    end
+
+class \nodoc\ _TestRegistryPopulateComponentHtml is UnitTest
+  fun name(): String => "registry/populate_component_html"
+
+  fun apply(h: TestHelper) ? =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    registry.register("c1", _TestComponent)
+
+    let data: Array[(String, (String | templates.TemplateValue))] val =
+      recover val
+        let d = Array[(String, (String | templates.TemplateValue))]
+        d.push(("greeting", "world"))
+        d
+      end
+    registry.update("c1", data)
+    registry.render_all()
+
+    let assigns = Assigns
+    registry.populate_component_html(assigns)
+    let html = assigns.component_html("c1")?
+    h.assert_eq[String]("world", html)
+
+// --- Wire protocol component target tests ---
+
+class \nodoc\ _TestDecodeEventWithTarget is UnitTest
+  fun name(): String => "wire_protocol/decode_event_with_target"
+
+  fun apply(h: TestHelper) =>
+    let data = json.JsonObject
+      .update("t", "event")
+      .update("e", "toggle")
+      .update("p", json.JsonObject.update("id", "3"))
+      .update("c", "todo-3")
+      .string()
+
+    match _WireProtocol.decode_client_message(consume data)
+    | let msg: _EventMessage =>
+      h.assert_eq[String]("toggle", msg.event)
+      match msg.target
+      | let t: String => h.assert_eq[String]("todo-3", t)
+      | None => h.fail("expected target, got None")
+      end
+    else
+      h.fail("expected _EventMessage")
+    end
+
+class \nodoc\ _TestDecodeEventWithoutTarget is UnitTest
+  fun name(): String => "wire_protocol/decode_event_without_target"
+
+  fun apply(h: TestHelper) =>
+    let data = json.JsonObject
+      .update("t", "event")
+      .update("e", "click")
+      .update("p", None)
+      .string()
+
+    match _WireProtocol.decode_client_message(consume data)
+    | let msg: _EventMessage =>
+      h.assert_eq[String]("click", msg.event)
+      match msg.target
+      | let _: String => h.fail("expected None target")
+      | None => None
+      end
+    else
+      h.fail("expected _EventMessage")
+    end
+
+class \nodoc\ _TestDecodeEventNonStringTarget is UnitTest
+  fun name(): String => "wire_protocol/decode_event_non_string_target"
+
+  fun apply(h: TestHelper) =>
+    let data = json.JsonObject
+      .update("t", "event")
+      .update("e", "click")
+      .update("p", None)
+      .update("c", I64(42))
+      .string()
+
+    match _WireProtocol.decode_client_message(consume data)
+    | let err: _WireError =>
+      h.assert_true(err.reason.contains("'c'"),
+        "error should mention 'c' field")
+    else
+      h.fail("expected _WireError for non-string 'c'")
+    end
+
+// --- Assigns component HTML tests ---
+
+class \nodoc\ _TestAssignsComponentHtml is UnitTest
+  fun name(): String => "assigns/component_html"
+
+  fun apply(h: TestHelper) ? =>
+    let assigns = Assigns
+    assigns._set_component_html("c1", "<li>item</li>")
+    let html = assigns.component_html("c1")?
+    h.assert_eq[String]("<li>item</li>", html)
+
+class \nodoc\ _TestAssignsComponentHtmlUnknown is UnitTest
+  fun name(): String => "assigns/component_html_unknown"
+
+  fun apply(h: TestHelper) =>
+    let assigns = Assigns
+    let found = try
+        assigns.component_html("nonexistent")?
+        true
+      else
+        false
+      end
+    h.assert_false(found, "should error for unknown component ID")
+
+class \nodoc\ _TestAssignsClearComponentHtml is UnitTest
+  fun name(): String => "assigns/clear_component_html"
+
+  fun apply(h: TestHelper) =>
+    let assigns = Assigns
+    assigns._set_component_html("c1", "<li>item</li>")
+    assigns._clear_component_html()
+    let found = try
+        assigns.component_html("c1")?
+        true
+      else
+        false
+      end
+    h.assert_false(found, "should be empty after clear")
+
+class \nodoc\ _TestAssignsComponentHtmlSeparateNamespace is UnitTest
+  fun name(): String => "assigns/component_html_separate_namespace"
+
+  fun apply(h: TestHelper) ? =>
+    let assigns = Assigns
+    assigns.update("c1", "user_value")
+    assigns._set_component_html("c1", "<div>component</div>")
+    // User assign and component HTML should not collide
+    let user_val = assigns("c1")?.string()?
+    let comp_html = assigns.component_html("c1")?
+    h.assert_eq[String]("user_value", user_val)
+    h.assert_eq[String]("<div>component</div>", comp_html)
+
+class \nodoc\ _TestAssignsRenderValues is UnitTest
+  fun name(): String => "assigns/render_values"
+
+  fun apply(h: TestHelper) ? =>
+    let assigns = Assigns
+    assigns.update("greeting", "hello")
+    let child = assigns.render_values()
+    // Child can read parent values
+    let parent_val = child("greeting")?.string()?
+    h.assert_eq[String]("hello", parent_val)
+    // Child can write new values without affecting parent
+    child("extra") = "world"
+    let child_val = child("extra")?.string()?
+    h.assert_eq[String]("world", child_val)
+
+// --- Security tests ---
+
+class \nodoc\ _TestRegistryEmptyStringTarget is UnitTest
+  fun name(): String => "registry/empty_string_target"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    h.assert_false(registry.handle_event("", "click", None),
+      "empty string target should fail when no component registered with " +
+      "that ID")
+
+class \nodoc\ _TestRegistryLongTarget is UnitTest
+  fun name(): String => "registry/long_target"
+
+  fun apply(h: TestHelper) =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    let long_id = recover val
+      String(10000).>append("a" * 10000)
+    end
+    h.assert_false(registry.handle_event(long_id, "click", None),
+      "very long target should fail without crashing")
+
+class \nodoc\ _TestComponentIsolation is UnitTest
+  fun name(): String => "registry/component_isolation"
+
+  fun apply(h: TestHelper) ? =>
+    let pending = Array[(String val, json.JsonValue)]
+    let registry = _ComponentRegistry(pending)
+    registry.register("a", _TestComponent)
+    registry.register("b", _TestComponent)
+
+    let data_a: Array[(String, (String | templates.TemplateValue))] val =
+      recover val
+        let d = Array[(String, (String | templates.TemplateValue))]
+        d.push(("greeting", "alpha"))
+        d
+      end
+    registry.update("a", data_a)
+
+    let data_b: Array[(String, (String | templates.TemplateValue))] val =
+      recover val
+        let d = Array[(String, (String | templates.TemplateValue))]
+        d.push(("greeting", "beta"))
+        d
+      end
+    registry.update("b", data_b)
+
+    registry.render_all()
+    h.assert_eq[String]("alpha", registry.component_html("a")?)
+    h.assert_eq[String]("beta", registry.component_html("b")?)

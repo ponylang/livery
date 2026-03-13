@@ -1,6 +1,6 @@
 # Examples
 
-Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. The counter, ticker, and form examples each include an `index.html` file that connects to the running server via the JavaScript client. The ssr example dynamically renders its HTML via an HTTP server using `PageRenderer`.
+Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. The counter, ticker, form, and todo examples each include an `index.html` file that connects to the running server via the JavaScript client. The ssr example dynamically renders its HTML via an HTTP server using `PageRenderer`.
 
 ## Running examples
 
@@ -23,6 +23,7 @@ make ssl=openssl_3.0.x examples
 | counter | `./build/release/counter` | 8081 | — |
 | ticker | `./build/release/ticker` | 8082 | — |
 | form | `./build/release/form` | 8083 | — |
+| todo | `./build/release/todo` | 8086 | — |
 | ssr | `./build/release/ssr` | 8084 | 8085 |
 
 1. For the counter, ticker, and form examples, serve the repo root with a static file server (the HTML shells use relative paths to load the JS client bundle):
@@ -36,6 +37,7 @@ Then visit the example in your browser:
 - Counter: `http://localhost:8080/examples/counter/index.html`
 - Ticker: `http://localhost:8080/examples/ticker/index.html`
 - Form: `http://localhost:8080/examples/form/index.html`
+- Todo: `http://localhost:8080/examples/todo/index.html`
 - SSR: `http://localhost:8085/` (served directly by hobby, no static file server needed)
 
 ## [counter](counter/)
@@ -49,6 +51,10 @@ Demonstrates server push via `PubSub` and `handle_info`. A `Ticker` actor publis
 ## [form](form/)
 
 Demonstrates form handling with live validation. A registration form uses `lv-change` for real-time field validation as the user types and `lv-submit` for full validation on submit. Field values and error messages are stored as assigns — the template renders both the current input values and per-field error messages. Shows how the existing `handle_event` API handles form data without any additional library types: the client serializes form fields as a JSON payload, and the server extracts them with `JsonNav`.
+
+## [todo](todo/)
+
+Demonstrates stateful components with `LiveComponent`. A parent `TodoListView` manages a list of `TodoItem` components — each item handles its own `toggle` event via `lv-target`, while `delete` events route to the parent (no `lv-target` on the delete button) because the parent manages component lifecycle. Shows `Socket.register_component`, `Socket.update_component`, `Socket.unregister_component`, event targeting with `lv-target`, and composing component HTML into the parent's render via `assigns.component_html` and `assigns.render_values`.
 
 ## [ssr](ssr/)
 

@@ -17,7 +17,7 @@
     },
     {
       "locator": "github.com/ponylang/templates.git",
-      "version": "0.3.0"
+      "version": "0.3.1"
     },
     {
       "locator": "github.com/ponylang/json-ng.git",

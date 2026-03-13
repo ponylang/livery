@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Todo List - Livery Example</title>
+  <style>
+    .done { text-decoration: line-through; color: #999; }
+  </style>
+</head>
+<body>
+  <div id="lv-root"></div>
+  <script src="../../client/dist/livery.iife.js"></script>
+  <script>
+    new LiveView({
+      url: "ws://localhost:8086/todo",
+      target: document.getElementById("lv-root")
+    }).connect();
+  </script>
+</body>
+</html>

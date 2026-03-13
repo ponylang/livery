@@ -19,6 +19,7 @@ actor _Connection is mare.WebSocketServerActor
   var _last_html: String val = ""
   let _router: Routes val
   let _pub_sub: PubSub tag
+  let _components: _ComponentRegistry ref
 
   new create(auth: lori.TCPServerAuth, fd: U32,
     config: mare.WebSocketConfig val, routes: Routes val,
@@ -27,7 +28,8 @@ actor _Connection is mare.WebSocketServerActor
     _assigns = Assigns
     _pending_events = Array[(String val, json.JsonValue)]
     _pub_sub = pub_sub
-    _socket = Socket(_assigns, _pending_events, this, _pub_sub)
+    _components = _ComponentRegistry(_pending_events)
+    _socket = Socket(_assigns, _pending_events, this, _pub_sub, _components)
     _router = routes
     _ws = mare.WebSocketServer(auth, fd, this, config)
 
@@ -51,6 +53,11 @@ actor _Connection is mare.WebSocketServerActor
       end
 
     view.mount(_socket)
+    _components.render_all()
+    for err in _components.flush_render_errors().values() do
+      _ws.send_text(_WireProtocol.encode_error(err))
+    end
+    _components.populate_component_html(_assigns)
 
     try
       let html = view.render(_assigns)?
@@ -61,6 +68,8 @@ actor _Connection is mare.WebSocketServerActor
       _ws.close()
       return
     end
+    _assigns.clear_changes()
+    _assigns._clear_component_html()
 
     _view = view
 
@@ -73,7 +82,18 @@ actor _Connection is mare.WebSocketServerActor
     | let v: LiveView ref =>
       match _WireProtocol.decode_client_message(data)
       | let msg: _EventMessage =>
-        v.handle_event(msg.event, msg.payload, _socket)
+        match msg.target
+        | let component_id: String =>
+          if not _components.handle_event(component_id, msg.event,
+            msg.payload)
+          then
+            _ws.send_text(
+              _WireProtocol.encode_error("unknown_component"))
+            return
+          end
+        | None =>
+          v.handle_event(msg.event, msg.payload, _socket)
+        end
         _maybe_rerender(v)
       | _HeartbeatMessage =>
         _ws.send_text(_WireProtocol.encode_heartbeat_ack())
@@ -94,7 +114,12 @@ actor _Connection is mare.WebSocketServerActor
     end
 
   fun ref _maybe_rerender(v: LiveView ref) =>
-    if _assigns.changed() then
+    let components_changed = _components.render_all()
+    for err in _components.flush_render_errors().values() do
+      _ws.send_text(_WireProtocol.encode_error(err))
+    end
+    if _assigns.changed() or components_changed then
+      _components.populate_component_html(_assigns)
       try
         let html = v.render(_assigns)?
         _last_html = html
@@ -103,6 +128,7 @@ actor _Connection is mare.WebSocketServerActor
         _ws.send_text(_WireProtocol.encode_error("render_failed"))
       end
       _assigns.clear_changes()
+      _assigns._clear_component_html()
     end
     _flush_pending_events()
 

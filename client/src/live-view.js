@@ -25,8 +25,8 @@ export class LiveView {
       WebSocket: opts.WebSocket,
       onMessage: (msg) => this._handleMessage(msg),
       onOpen: () => {
-        this._events = setupEventDelegation(this._target, (event, payload) => {
-          this._socket.send(encodeEvent(event, payload));
+        this._events = setupEventDelegation(this._target, (event, payload, target) => {
+          this._socket.send(encodeEvent(event, payload, target));
         });
       },
       onClose: () => {

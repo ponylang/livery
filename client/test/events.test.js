@@ -16,7 +16,7 @@ describe("setupEventDelegation", () => {
 
     root.querySelector("button").click();
 
-    expect(sendEvent).toHaveBeenCalledWith("increment", {});
+    expect(sendEvent).toHaveBeenCalledWith("increment", {}, null);
   });
 
   it("bubbles up from child to find lv-click", () => {
@@ -26,7 +26,7 @@ describe("setupEventDelegation", () => {
 
     root.querySelector("#child").click();
 
-    expect(sendEvent).toHaveBeenCalledWith("click-me", {});
+    expect(sendEvent).toHaveBeenCalledWith("click-me", {}, null);
   });
 
   it("collects lv-value-* attributes into payload", () => {
@@ -36,7 +36,7 @@ describe("setupEventDelegation", () => {
 
     root.querySelector("button").click();
 
-    expect(sendEvent).toHaveBeenCalledWith("delete", { id: "5" });
+    expect(sendEvent).toHaveBeenCalledWith("delete", { id: "5" }, null);
   });
 
   it("collects multiple lv-value-* attributes", () => {
@@ -48,7 +48,7 @@ describe("setupEventDelegation", () => {
 
     root.querySelector("button").click();
 
-    expect(sendEvent).toHaveBeenCalledWith("update", { id: "3", name: "foo" });
+    expect(sendEvent).toHaveBeenCalledWith("update", { id: "3", name: "foo" }, null);
   });
 
   it("does not fire on click without lv-click", () => {
@@ -97,7 +97,7 @@ describe("setupEventDelegation", () => {
       new Event("input", { bubbles: true })
     );
 
-    expect(sendEvent).toHaveBeenCalledWith("validate", { username: "alice" });
+    expect(sendEvent).toHaveBeenCalledWith("validate", { username: "alice" }, null);
   });
 
   it("lv-change collects all named fields in the form", () => {
@@ -117,7 +117,7 @@ describe("setupEventDelegation", () => {
     expect(sendEvent).toHaveBeenCalledWith("validate", {
       username: "bob",
       email: "bob@test.com",
-    });
+    }, null);
   });
 
   it("lv-change does not fire for inputs outside a form with lv-change", () => {
@@ -151,7 +151,7 @@ describe("setupEventDelegation", () => {
     expect(sendEvent).toHaveBeenCalledWith("register", {
       username: "alice",
       email: "alice@test.com",
-    });
+    }, null);
   });
 
   it("lv-submit prevents default form submission", () => {
@@ -203,5 +203,101 @@ describe("setupEventDelegation", () => {
     root.querySelector("button").click();
 
     expect(sendEvent).not.toHaveBeenCalled();
+  });
+
+  // --- lv-target tests ---
+
+  it("lv-click with lv-target includes target in callback", () => {
+    const root = createRoot(
+      '<button lv-click="toggle" lv-target="todo-3">Toggle</button>'
+    );
+    const sendEvent = vi.fn();
+    setupEventDelegation(root, sendEvent);
+
+    root.querySelector("button").click();
+
+    expect(sendEvent).toHaveBeenCalledWith("toggle", {}, "todo-3");
+  });
+
+  it("lv-click without lv-target sends null target (backward compatible)", () => {
+    const root = createRoot('<button lv-click="click">Click</button>');
+    const sendEvent = vi.fn();
+    setupEventDelegation(root, sendEvent);
+
+    root.querySelector("button").click();
+
+    expect(sendEvent).toHaveBeenCalledWith("click", {}, null);
+  });
+
+  it("lv-target on ancestor element is found during delegation walk", () => {
+    const root = createRoot(
+      '<div lv-target="comp-1"><button lv-click="action">Go</button></div>'
+    );
+    const sendEvent = vi.fn();
+    setupEventDelegation(root, sendEvent);
+
+    root.querySelector("button").click();
+
+    expect(sendEvent).toHaveBeenCalledWith("action", {}, "comp-1");
+  });
+
+  it("lv-target on the event-binding element itself", () => {
+    const root = createRoot(
+      '<button lv-click="toggle" lv-target="item-5">Toggle</button>'
+    );
+    const sendEvent = vi.fn();
+    setupEventDelegation(root, sendEvent);
+
+    root.querySelector("button").click();
+
+    expect(sendEvent).toHaveBeenCalledWith("toggle", {}, "item-5");
+  });
+
+  it("lv-change with lv-target includes target", () => {
+    const root = createRoot(
+      '<form lv-change="validate" lv-target="form-comp">' +
+        '<input name="field" value="val" />' +
+      "</form>"
+    );
+    const sendEvent = vi.fn();
+    setupEventDelegation(root, sendEvent);
+
+    root.querySelector("input").dispatchEvent(
+      new Event("input", { bubbles: true })
+    );
+
+    expect(sendEvent).toHaveBeenCalledWith("validate", { field: "val" }, "form-comp");
+  });
+
+  it("lv-submit with lv-target includes target", () => {
+    const root = createRoot(
+      '<form lv-submit="save" lv-target="form-comp">' +
+        '<input name="f" value="v" />' +
+      "</form>"
+    );
+    const sendEvent = vi.fn();
+    setupEventDelegation(root, sendEvent);
+
+    root.querySelector("form").dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true })
+    );
+
+    expect(sendEvent).toHaveBeenCalledWith("save", { f: "v" }, "form-comp");
+  });
+
+  it("lv-target outside root is ignored", () => {
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("lv-target", "outside");
+    const root = document.createElement("div");
+    root.innerHTML = '<button lv-click="action">Go</button>';
+    wrapper.appendChild(root);
+    document.body.appendChild(wrapper);
+
+    const sendEvent = vi.fn();
+    setupEventDelegation(root, sendEvent);
+
+    root.querySelector("button").click();
+
+    expect(sendEvent).toHaveBeenCalledWith("action", {}, null);
   });
 });

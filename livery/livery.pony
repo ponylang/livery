@@ -14,6 +14,29 @@ Define server-side view logic by implementing the `LiveView` trait:
 Use `HtmlTemplate` from the templates library for rendering — it auto-escapes
 dynamic values by default.
 
+## Components
+
+Compose UIs from stateful `LiveComponent` instances embedded within a
+`LiveView`. Each component has its own assigns, lifecycle, and event handling.
+
+Register components through `Socket`:
+
+- `Socket.register_component(id, component)` — register and mount a component
+- `Socket.update_component(id, data)` — pass data from the parent to a component
+- `Socket.unregister_component(id)` — remove a component
+
+Components render independently through `HtmlTemplate`. The parent accesses
+component output in `render` via `assigns.component_html(id)` and inserts it
+as unescaped HTML (safe because the component's own template already escaped
+all dynamic values). Use `assigns.render_values()` to create a writable child
+scope of the template values for overlaying component HTML.
+
+Target events to specific components with the `lv-target` attribute in HTML.
+Events without `lv-target` route to the parent `LiveView`.
+
+Stateless components are a convention, not a framework feature — just
+primitives or classes with a render function that takes data and returns HTML.
+
 ## Server Push
 
 External actors can send messages to a connection through `PubSub` or

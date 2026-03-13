@@ -3,10 +3,15 @@
  *
  * @param {string} event - Event name (e.g., "increment")
  * @param {object} payload - Event payload
+ * @param {string|null} [target] - Component target ID, if any
  * @returns {string} JSON string
  */
-export function encodeEvent(event, payload) {
-  return JSON.stringify({ t: "event", e: event, p: payload });
+export function encodeEvent(event, payload, target) {
+  const msg = { t: "event", e: event, p: payload };
+  if (target != null) {
+    msg.c = target;
+  }
+  return JSON.stringify(msg);
 }
 
 /**

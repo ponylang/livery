@@ -79,7 +79,16 @@ primitive _WireProtocol
     match event_name
     | let e: String =>
       let p: json.JsonValue = try obj("p")? else None end
-      _EventMessage(e, p)
+      let target: (String val | None) =
+        try
+          match obj("c")?
+          | let c: String => c
+          else return _WireError("event 'c' field is not a string")
+          end
+        else
+          None
+        end
+      _EventMessage(e, p, target)
     else
       _WireError("event 'e' field is not a string")
     end
@@ -88,14 +97,19 @@ type _ClientMessage is (_EventMessage | _HeartbeatMessage)
 
 class val _EventMessage
   """
-  A client event message (e.g., button click).
+  A client event message (e.g., button click). Optionally targets a
+  specific component via the `target` field.
   """
   let event: String val
   let payload: json.JsonValue
+  let target: (String val | None)
 
-  new val create(event': String val, payload': json.JsonValue) =>
+  new val create(event': String val, payload': json.JsonValue,
+    target': (String val | None) = None)
+  =>
     event = event'
     payload = payload'
+    target = target'
 
 primitive _HeartbeatMessage
   """

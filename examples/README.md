@@ -1,6 +1,6 @@
 # Examples
 
-Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. Each example includes an `index.html` file that connects to the running server via the JavaScript client. The ssr example's `index.html` contains pre-rendered content that the JS client takes over on connect.
+Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. The counter, ticker, and form examples each include an `index.html` file that connects to the running server via the JavaScript client. The ssr example dynamically renders its HTML via an HTTP server using `PageRenderer`.
 
 ## Running examples
 
@@ -18,14 +18,14 @@ make ssl=openssl_3.0.x examples
 
 1. Start the Pony server for the example you want to run:
 
-| Example | Command | Port |
-|---------|---------|------|
-| counter | `./build/release/counter` | 8081 |
-| ticker | `./build/release/ticker` | 8082 |
-| form | `./build/release/form` | 8083 |
-| ssr | `./build/release/ssr` | 8084 |
+| Example | Command | WebSocket port | HTTP port |
+|---------|---------|----------------|-----------|
+| counter | `./build/release/counter` | 8081 | — |
+| ticker | `./build/release/ticker` | 8082 | — |
+| form | `./build/release/form` | 8083 | — |
+| ssr | `./build/release/ssr` | 8084 | 8085 |
 
-1. Serve the repo root with a static file server (the HTML shells use relative paths to load the JS client bundle):
+1. For the counter, ticker, and form examples, serve the repo root with a static file server (the HTML shells use relative paths to load the JS client bundle):
 
 ```sh
 python3 -m http.server 8080
@@ -36,7 +36,7 @@ Then visit the example in your browser:
 - Counter: `http://localhost:8080/examples/counter/index.html`
 - Ticker: `http://localhost:8080/examples/ticker/index.html`
 - Form: `http://localhost:8080/examples/form/index.html`
-- SSR: `http://localhost:8080/examples/ssr/index.html`
+- SSR: `http://localhost:8085/` (served directly by hobby, no static file server needed)
 
 ## [counter](counter/)
 
@@ -52,4 +52,4 @@ Demonstrates form handling with live validation. A registration form uses `lv-ch
 
 ## [ssr](ssr/)
 
-Demonstrates server-rendered first paint. The `index.html` contains the counter's initial HTML pre-rendered inside the `lv-root` container — the user sees content immediately on page load with no empty-page flash. When the WebSocket connects, the server mounts the same `CounterView` (producing identical HTML), and morphdom silently takes over the pre-rendered DOM. Compare with the counter example to see what server-rendered first paint adds. In production, `PageRenderer.render(factory)` would generate the HTML dynamically in an HTTP handler; this example uses static HTML to demonstrate the client-side takeover without requiring an HTTP server dependency.
+Demonstrates server-rendered first paint with a dynamic HTTP handler. A hobby HTTP server on port 8085 calls `PageRenderer.render(factory)` to produce the counter's initial HTML at request time, embeds it in a full page, and serves it along with the JS client bundle. When the browser loads the page, the user sees the counter immediately — no empty-page flash. The JS client then connects to the WebSocket server on port 8084, morphdom takes over the pre-rendered DOM, and the counter becomes interactive. Compare with the counter example to see what server-rendered first paint adds.

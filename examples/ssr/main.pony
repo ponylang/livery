@@ -76,6 +76,7 @@ class val IndexHandler is hobby.Handler
     let headers = recover val
       let h = stallion.Headers
       h.set("Content-Type", "text/html; charset=utf-8")
+      h.set("Content-Length", body.size().string())
       h
     end
     ctx.respond_with_headers(stallion.StatusOK, headers, consume body)

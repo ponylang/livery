@@ -16,9 +16,10 @@ Targets: `make test` (build + run tests + build examples), `make unit-tests` (te
 
 | Package | Version | Use path | Role |
 |---------|---------|----------|------|
-| mare | 0.1.1 | `"mare"` | WebSocket server (connection actor implements `WebSocketServerActor`) |
+| mare | 0.2.0 | `"mare"` | WebSocket server (connection actor implements `WebSocketServerActor`) |
 | templates | 0.3.0 | `"templates"` | HTML rendering (`HtmlTemplate` auto-escapes by default) |
 | json-ng | 0.3.0 | `"json"` | Wire protocol serialization (persistent `JsonObject`/`JsonArray`) |
+| hobby | 0.2.1 | `"hobby"` | HTTP server (used in SSR example for dynamic first paint) |
 | lori | (transitive via mare) | `"lori"` | TCP networking, idle timeout |
 
 ## Architecture
@@ -71,7 +72,7 @@ examples/
   counter/        # Increment/decrement counter
   ticker/         # PubSub-driven ticker (server push via re-render + push_event)
   form/           # Registration form with live validation (lv-change + lv-submit)
-  ssr/            # Server-rendered first paint (pre-rendered counter)
+  ssr/            # Server-rendered first paint (hobby HTTP + PageRenderer)
 client/           # JavaScript client library
   src/            # Source modules (wire, events, socket, live-view)
   test/           # vitest tests

@@ -13,6 +13,43 @@ primitive _WireProtocol
       .update("html", html)
       .string()
 
+  fun encode_render_full(statics: Array[String] val,
+    dynamics: Array[String] val): String val
+  =>
+    """
+    Encode a full split render: statics + all dynamics.
+    Sent on first render or when the template changes.
+    """
+    var s_arr = json.JsonArray
+    for s in statics.values() do
+      s_arr = s_arr.push(s)
+    end
+    var d_arr = json.JsonArray
+    for d in dynamics.values() do
+      d_arr = d_arr.push(d)
+    end
+    json.JsonObject
+      .update("t", "render_full")
+      .update("s", s_arr)
+      .update("d", d_arr)
+      .string()
+
+  fun encode_render_diff(
+    changes: Array[(USize, String)] val): String val
+  =>
+    """
+    Encode a partial update: only changed dynamic slot values.
+    String keys for slot indices.
+    """
+    var d_obj = json.JsonObject
+    for (idx, value) in changes.values() do
+      d_obj = d_obj.update(idx.string(), value)
+    end
+    json.JsonObject
+      .update("t", "render_diff")
+      .update("d", d_obj)
+      .string()
+
   fun encode_heartbeat_ack(): String val =>
     """
     Encode a heartbeat acknowledgment.

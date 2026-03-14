@@ -19,12 +19,17 @@ export class LiveView {
     this._target = opts.target;
     this._pushHandlers = {};
     this._events = null;
+    this._statics = null;
+    this._dynamics = null;
 
     this._socket = new Socket({
       url: opts.url,
       WebSocket: opts.WebSocket,
       onMessage: (msg) => this._handleMessage(msg),
       onOpen: () => {
+        // Reset split state on reconnect
+        this._statics = null;
+        this._dynamics = null;
         this._events = setupEventDelegation(this._target, (event, payload, target) => {
           this._socket.send(encodeEvent(event, payload, target));
         });
@@ -63,14 +68,45 @@ export class LiveView {
     this._pushHandlers[event] = callback;
   }
 
+  _applyHtml(html) {
+    if (this._target.firstElementChild) {
+      morphdom(this._target.firstElementChild, html);
+    } else {
+      this._target.innerHTML = html;
+    }
+  }
+
+  _assembleHtml(statics, dynamics) {
+    let html = "";
+    for (let i = 0; i < dynamics.length; i++) {
+      html += statics[i] + dynamics[i];
+    }
+    html += statics[dynamics.length];
+    return html;
+  }
+
   _handleMessage(msg) {
     switch (msg.type) {
-      case "render":
-        if (this._target.firstElementChild) {
-          morphdom(this._target.firstElementChild, msg.html);
-        } else {
-          this._target.innerHTML = msg.html;
+      case "render_full":
+        this._statics = msg.statics;
+        this._dynamics = [...msg.dynamics];
+        this._applyHtml(this._assembleHtml(this._statics, this._dynamics));
+        break;
+      case "render_diff":
+        if (!this._statics || !this._dynamics) break;
+        for (const [idx, val] of Object.entries(msg.dynamics)) {
+          const i = parseInt(idx, 10);
+          if (i >= 0 && i < this._dynamics.length) {
+            this._dynamics[i] = val;
+          }
         }
+        this._applyHtml(this._assembleHtml(this._statics, this._dynamics));
+        break;
+      case "render":
+        // Full-HTML fallback -- clear split state
+        this._statics = null;
+        this._dynamics = null;
+        this._applyHtml(msg.html);
         break;
       case "push": {
         const handler = this._pushHandlers[msg.event];

@@ -28,6 +28,8 @@ export function encodeHeartbeat() {
  *
  * @param {string} data - Raw JSON string from server
  * @returns {{ type: "render", html: string }
+ *          | { type: "render_full", statics: string[], dynamics: string[] }
+ *          | { type: "render_diff", dynamics: Object<string, string> }
  *          | { type: "heartbeat_ack" }
  *          | { type: "push", event: string, payload: * }
  *          | { type: "error", reason: string }
@@ -44,6 +46,10 @@ export function decodeServerMessage(data) {
   switch (obj.t) {
     case "render":
       return { type: "render", html: obj.html };
+    case "render_full":
+      return { type: "render_full", statics: obj.s, dynamics: obj.d };
+    case "render_diff":
+      return { type: "render_diff", dynamics: obj.d };
     case "heartbeat_ack":
       return { type: "heartbeat_ack" };
     case "push":

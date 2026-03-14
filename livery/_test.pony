@@ -80,6 +80,32 @@ actor \nodoc\ Main is TestList
     test(_TestRegistryEmptyStringTarget)
     test(_TestRegistryLongTarget)
     test(_TestComponentIsolation)
+    // RenderSink roundtrip tests
+    test(Property1UnitTest[String](_TestRenderSinkRoundtrip))
+    test(Property1UnitTest[(String, String, String)](
+      _TestRenderSinkRoundtripMultiVar))
+    test(_TestRenderSinkIfCollapse)
+    test(_TestRenderSinkEmptyDynamics)
+    test(Property1UnitTest[USize](_TestRenderSinkInterleave))
+    test(_TestRenderSinkDynamicsCountChange)
+    test(_TestRenderSinkEscapingRoundtrip)
+    // RenderSink diff tests
+    test(_TestRenderSinkFirstRender)
+    test(_TestRenderSinkNoDiff)
+    test(_TestRenderSinkPartialDiff)
+    test(_TestRenderSinkAllSlotsDiff)
+    test(_TestRenderSinkStaticsMismatch)
+    test(_TestRenderSinkClear)
+    test(_TestRenderSinkAbandon)
+    test(Property1UnitTest[(USize, Bool)](_TestRenderSinkDiffProperty))
+    test(_TestRenderSinkFallbackPattern)
+    test(_TestRenderSinkFullHtmlBeforeRender)
+    // Wire protocol split render tests
+    test(_TestEncodeRenderFull)
+    test(_TestEncodeRenderDiff)
+    test(_TestEncodeRenderDiffEmpty)
+    // LiveView default render_parts test
+    test(_TestLiveViewRenderPartsDefault)
 
 // --- Test helpers ---
 
@@ -1153,3 +1179,677 @@ class \nodoc\ _TestComponentIsolation is UnitTest
     registry.render_all()
     h.assert_eq[String]("alpha", registry.component_html("a")?)
     h.assert_eq[String]("beta", registry.component_html("b")?)
+
+// --- RenderSink roundtrip tests ---
+
+class \nodoc\ _TestRenderSinkRoundtrip is Property1[String]
+  """
+  render_to(sink) -> full_html() matches HtmlTemplate.render() for a
+  single-variable template with random values.
+  """
+  fun name(): String => "render_sink/roundtrip"
+
+  fun gen(): Generator[String] =>
+    Generators.ascii_printable(0, 50)
+
+  fun property(value: String, h: PropertyHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tv = templates.TemplateValues
+    tv("x") = value
+
+    let expected = tmpl.render(tv)?
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    sink.result()
+
+    h.assert_eq[String](expected, sink.full_html())
+
+class \nodoc\ _TestRenderSinkRoundtripMultiVar is
+  Property1[(String, String, String)]
+  """
+  Same roundtrip test with three variables.
+  """
+  fun name(): String => "render_sink/roundtrip_multi_var"
+
+  fun gen(): Generator[(String, String, String)] =>
+    Generators.zip3[String, String, String](
+      Generators.ascii_printable(0, 50),
+      Generators.ascii_printable(0, 50),
+      Generators.ascii_printable(0, 50))
+
+  fun property(sample: (String, String, String), h: PropertyHelper) ? =>
+    (let a, let b, let c) = sample
+    let tmpl = templates.HtmlTemplate.parse(
+      "<p>{{ x }}</p><p>{{ y }}</p><p>{{ z }}</p>")?
+    let tv = templates.TemplateValues
+    tv("x") = a
+    tv("y") = b
+    tv("z") = c
+
+    let expected = tmpl.render(tv)?
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    sink.result()
+
+    h.assert_eq[String](expected, sink.full_html())
+
+class \nodoc\ _TestRenderSinkIfCollapse is UnitTest
+  """
+  An if block collapses to one dynamic; verify sizes and full_html().
+  """
+  fun name(): String => "render_sink/if_collapse"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse(
+      "<div>{{ if show }}visible{{ end }}</div>")?
+    let tv = templates.TemplateValues
+    tv("show") = "true"
+
+    let expected = tmpl.render(tv)?
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    match sink.result()
+    | let full: _FullRender =>
+      // if block collapses to a single dynamic value
+      h.assert_eq[USize](full.dynamics.size() + 1, full.statics.size())
+    else
+      h.fail("expected _FullRender on first render")
+    end
+
+    h.assert_eq[String](expected, sink.full_html())
+
+class \nodoc\ _TestRenderSinkEmptyDynamics is UnitTest
+  """
+  A statics-only template produces empty dynamics.
+  """
+  fun name(): String => "render_sink/empty_dynamics"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse("<div>hello</div>")?
+    let tv = templates.TemplateValues
+
+    let expected = tmpl.render(tv)?
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    match sink.result()
+    | let full: _FullRender =>
+      h.assert_eq[USize](0, full.dynamics.size())
+      h.assert_eq[USize](1, full.statics.size())
+    else
+      h.fail("expected _FullRender on first render")
+    end
+
+    h.assert_eq[String](expected, sink.full_html())
+
+class \nodoc\ _TestRenderSinkInterleave is Property1[USize]
+  """
+  Random statics/dynamics arrays, verify full_html() matches manual
+  interleave. Uses generated arrays directly (not templates) to test the
+  reconstruction logic independently.
+  """
+  fun name(): String => "render_sink/interleave"
+
+  fun gen(): Generator[USize] =>
+    Generators.usize(1, 10)
+
+  fun property(n: USize, h: PropertyHelper) ? =>
+    // Build deterministic statics and dynamics based on n
+    let statics = recover val
+      let arr = Array[String](n + 1)
+      var i: USize = 0
+      while i < (n + 1) do
+        arr.push("s" + i.string())
+        i = i + 1
+      end
+      arr
+    end
+    let dynamics = recover val
+      let arr = Array[String](n)
+      var i: USize = 0
+      while i < n do
+        arr.push("d" + i.string())
+        i = i + 1
+      end
+      arr
+    end
+
+    // Build expected string manually
+    let expected = recover val
+      var total: USize = 0
+      for s in statics.values() do total = total + s.size() end
+      for d in dynamics.values() do total = total + d.size() end
+      let out = String(total)
+      var i: USize = 0
+      while i < dynamics.size() do
+        out.append(statics(i)?)
+        out.append(dynamics(i)?)
+        i = i + 1
+      end
+      out.append(statics(i)?)
+      out
+    end
+
+    // Drive the sink manually
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    var j: USize = 0
+    while j < dynamics.size() do
+      sink.literal(statics(j)?)
+      sink.dynamic_value(dynamics(j)?)
+      j = j + 1
+    end
+    sink.literal(statics(j)?)
+    sink.result()
+
+    h.assert_eq[String](expected, sink.full_html())
+
+class \nodoc\ _TestRenderSinkDynamicsCountChange is UnitTest
+  """
+  Changing the number of dynamics between renders triggers _FullRender.
+
+  The template invariant statics.size() == dynamics.size() + 1 means a
+  dynamics count change also changes the statics count, so the existing
+  statics-count-mismatch check catches it implicitly.
+  """
+  fun name(): String => "render_sink/dynamics_count_change"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl1 = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl2 = templates.HtmlTemplate.parse(
+      "<p>{{ a }}</p><p>{{ b }}</p>")?
+    let tv = templates.TemplateValues
+    tv("x") = "one"
+    tv("a") = "two"
+    tv("b") = "three"
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl1.render_to(sink, tv)?
+    sink.result()
+
+    // Second render with different dynamics count
+    sink.begin()
+    tmpl2.render_to(sink, tv)?
+    match sink.result()
+    | let _: _FullRender => None
+    else
+      h.fail("expected _FullRender when dynamics count changes")
+    end
+
+class \nodoc\ _TestRenderSinkEscapingRoundtrip is UnitTest
+  """
+  Targeted escaping roundtrip: render_to(sink) -> full_html() matches
+  HtmlTemplate.render() for a value containing HTML-significant characters.
+  Makes the auto-escaping equivalence visible without relying on generators.
+  """
+  fun name(): String => "render_sink/escaping_roundtrip"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tv = templates.TemplateValues
+    tv("x") = "<script>alert('xss')</script>"
+
+    let expected = tmpl.render(tv)?
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    sink.result()
+
+    h.assert_eq[String](expected, sink.full_html())
+
+// --- RenderSink diff tests ---
+
+class \nodoc\ _TestRenderSinkFirstRender is UnitTest
+  """
+  First result() returns _FullRender.
+  """
+  fun name(): String => "render_sink/first_render"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tv = templates.TemplateValues
+    tv("x") = "hello"
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    match sink.result()
+    | let full: _FullRender =>
+      h.assert_eq[USize](1, full.dynamics.size())
+      try
+        h.assert_eq[String]("hello", full.dynamics(0)?)
+      else
+        h.fail("dynamics(0) access failed")
+      end
+    else
+      h.fail("expected _FullRender on first render")
+    end
+
+class \nodoc\ _TestRenderSinkNoDiff is UnitTest
+  """
+  Same dynamics on second render returns _NoChange.
+  """
+  fun name(): String => "render_sink/no_diff"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tv = templates.TemplateValues
+    tv("x") = "same"
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    sink.result()
+
+    // Second render with same values
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    match sink.result()
+    | _NoChange => None
+    else
+      h.fail("expected _NoChange when values are identical")
+    end
+
+class \nodoc\ _TestRenderSinkPartialDiff is UnitTest
+  """
+  Changed slots return _SlotDiff with correct indices and values.
+  """
+  fun name(): String => "render_sink/partial_diff"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse(
+      "<p>{{ a }}</p><p>{{ b }}</p><p>{{ c }}</p>")?
+    let tv = templates.TemplateValues
+    tv("a") = "1"
+    tv("b") = "2"
+    tv("c") = "3"
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    sink.result()
+
+    // Change only slot 1 (b)
+    tv("b") = "changed"
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    match sink.result()
+    | let diff: _SlotDiff =>
+      h.assert_eq[USize](1, diff.changes.size())
+      (let idx, let val') = diff.changes(0)?
+      h.assert_eq[USize](1, idx)
+      h.assert_eq[String]("changed", val')
+    else
+      h.fail("expected _SlotDiff")
+    end
+
+class \nodoc\ _TestRenderSinkAllSlotsDiff is UnitTest
+  """
+  All slots changed returns _SlotDiff (not _FullRender).
+  """
+  fun name(): String => "render_sink/all_slots_diff"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse(
+      "<p>{{ a }}</p><p>{{ b }}</p>")?
+    let tv = templates.TemplateValues
+    tv("a") = "1"
+    tv("b") = "2"
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    sink.result()
+
+    // Change all slots
+    tv("a") = "x"
+    tv("b") = "y"
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    match sink.result()
+    | let diff: _SlotDiff =>
+      h.assert_eq[USize](2, diff.changes.size())
+    | let _: _FullRender =>
+      h.fail("expected _SlotDiff, not _FullRender")
+    else
+      h.fail("expected _SlotDiff")
+    end
+
+class \nodoc\ _TestRenderSinkStaticsMismatch is UnitTest
+  """
+  Different template instance (different statics content) returns _FullRender.
+  """
+  fun name(): String => "render_sink/statics_mismatch"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl1 = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl2 = templates.HtmlTemplate.parse("<span>{{ x }}</span>")?
+    let tv = templates.TemplateValues
+    tv("x") = "hello"
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl1.render_to(sink, tv)?
+    sink.result()
+
+    // Second render with different template
+    sink.begin()
+    tmpl2.render_to(sink, tv)?
+    match sink.result()
+    | let _: _FullRender => None
+    else
+      h.fail("expected _FullRender on statics mismatch")
+    end
+
+class \nodoc\ _TestRenderSinkClear is UnitTest
+  """
+  After clear(), next render returns _FullRender.
+  """
+  fun name(): String => "render_sink/clear"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tv = templates.TemplateValues
+    tv("x") = "hello"
+
+    let sink: _RenderSink ref = _RenderSink
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    sink.result()
+
+    sink.clear()
+
+    // Next render should be treated as first
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    match sink.result()
+    | let _: _FullRender => None
+    else
+      h.fail("expected _FullRender after clear()")
+    end
+
+class \nodoc\ _TestRenderSinkAbandon is UnitTest
+  """
+  After abandon(), cached state is preserved (next render diffs against
+  pre-abandon state).
+  """
+  fun name(): String => "render_sink/abandon"
+
+  fun apply(h: TestHelper) ? =>
+    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tv = templates.TemplateValues
+    tv("x") = "hello"
+
+    let sink: _RenderSink ref = _RenderSink
+    // First render establishes cache
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    sink.result()
+
+    // Abandoned render should not change cache
+    sink.begin()
+    tv("x") = "abandoned"
+    tmpl.render_to(sink, tv)?
+    sink.abandon()
+
+    // Next render diffs against original "hello", not "abandoned"
+    tv("x") = "hello"
+    sink.begin()
+    tmpl.render_to(sink, tv)?
+    match sink.result()
+    | _NoChange => None
+    else
+      h.fail("expected _NoChange (should diff against pre-abandon cache)")
+    end
+
+class \nodoc\ _TestRenderSinkDiffProperty is Property1[(USize, Bool)]
+  """
+  Diff contains exactly the indices where values differ.
+
+  Generates a slot count (1-10) and a Bool that determines whether any
+  slots change. When true, even-indexed slots change and odd stay the
+  same. When false, no slots change, exercising _NoChange.
+  """
+  fun name(): String => "render_sink/diff_property"
+
+  fun gen(): Generator[(USize, Bool)] =>
+    Generators.zip2[USize, Bool](
+      Generators.usize(1, 10),
+      Generators.bool())
+
+  fun property(sample: (USize, Bool), h: PropertyHelper) =>
+    (let n, let do_changes) = sample
+    // Build a template with N slots
+    let tmpl_str = recover val
+      let s = String
+      var i: USize = 0
+      while i < n do
+        s.append("{{ v" + i.string() + " }}")
+        i = i + 1
+      end
+      s
+    end
+
+    try
+      let tmpl = templates.HtmlTemplate.parse(tmpl_str)?
+
+      // Base values: "base_0", "base_1", ...
+      let tv = templates.TemplateValues
+      var i: USize = 0
+      while i < n do
+        tv("v" + i.string()) = "base_" + i.string()
+        i = i + 1
+      end
+
+      let sink: _RenderSink ref = _RenderSink
+      sink.begin()
+      tmpl.render_to(sink, tv)?
+      sink.result()
+
+      // Modified: when do_changes is true, even indices change
+      let expected_changes = Array[USize]
+      if do_changes then
+        i = 0
+        while i < n do
+          if (i % 2) == 0 then
+            tv("v" + i.string()) = "changed_" + i.string()
+            expected_changes.push(i)
+          end
+          i = i + 1
+        end
+      end
+
+      sink.begin()
+      tmpl.render_to(sink, tv)?
+      let diff = sink.result()
+
+      match diff
+      | let slot_diff: _SlotDiff =>
+        h.assert_eq[USize](expected_changes.size(), slot_diff.changes.size())
+        var j: USize = 0
+        while j < slot_diff.changes.size() do
+          try
+            (let idx, let val') = slot_diff.changes(j)?
+            let exp_idx = expected_changes(j)?
+            h.assert_eq[USize](exp_idx, idx)
+            h.assert_eq[String]("changed_" + exp_idx.string(), val')
+          else
+            h.fail("changes(" + j.string() + ") access failed")
+          end
+          j = j + 1
+        end
+      | _NoChange =>
+        h.assert_eq[USize](0, expected_changes.size(),
+          "got _NoChange but expected changes")
+      | let _: _FullRender =>
+        // The generator never changes statics between renders, so this arm
+        // is unreachable. See _TestRenderSinkStaticsMismatch for the case
+        // where different statics trigger _FullRender.
+        h.fail("expected _SlotDiff or _NoChange, not _FullRender")
+      end
+    else
+      h.fail("template parse or render failed")
+    end
+
+class \nodoc\ _TestRenderSinkFallbackPattern is UnitTest
+  """
+  Test the exact begin() -> abandon() -> begin() -> drive -> result() sequence
+  that _Connection._try_split_render uses when render_parts returns false.
+
+  The existing _TestRenderSinkAbandon tests abandon after a full first render;
+  this tests the empty-abandon case where the sink was never driven before
+  abandon.
+  """
+  fun name(): String => "render_sink/fallback_pattern"
+
+  fun apply(h: TestHelper) =>
+    let sink: _RenderSink ref = _RenderSink
+
+    // Step 1: begin a render transaction
+    sink.begin()
+
+    // Step 2: render_parts returns false (default impl doesn't drive sink)
+    let view: LiveView ref = _DummyView
+    let assigns = Assigns
+    let drove_sink = view.render_parts(assigns, sink)
+    h.assert_false(drove_sink, "default render_parts should return false")
+
+    // Step 3: abandon the empty transaction
+    sink.abandon()
+
+    // Step 4: fresh render with manual literal/dynamic calls
+    sink.begin()
+    sink.literal("<p>")
+    sink.dynamic_value("fallback")
+    sink.literal("</p>")
+    match sink.result()
+    | let full: _FullRender =>
+      h.assert_eq[USize](2, full.statics.size())
+      h.assert_eq[USize](1, full.dynamics.size())
+      try
+        h.assert_eq[String]("fallback", full.dynamics(0)?)
+      else
+        h.fail("dynamics(0) access failed")
+      end
+    else
+      h.fail("expected _FullRender after empty abandon + fresh render")
+    end
+
+class \nodoc\ _TestRenderSinkFullHtmlBeforeRender is UnitTest
+  """
+  full_html() on a fresh sink (no render transaction) returns empty string.
+  """
+  fun name(): String => "render_sink/full_html_before_render"
+
+  fun apply(h: TestHelper) =>
+    let sink: _RenderSink ref = _RenderSink
+    h.assert_eq[String]("", sink.full_html())
+
+// --- Wire protocol split render tests ---
+
+class \nodoc\ _TestEncodeRenderFull is UnitTest
+  fun name(): String => "wire_protocol/encode_render_full"
+
+  fun apply(h: TestHelper) ? =>
+    let statics: Array[String] val = ["<div>"; "</div>"]
+    let dynamics: Array[String] val = ["42"]
+    let encoded = _WireProtocol.encode_render_full(statics, dynamics)
+    let obj = match json.JsonParser.parse(encoded)
+      | let o: json.JsonObject => o
+      else h.fail("expected JsonObject"); error
+      end
+    match obj("t")?
+    | let t: String => h.assert_eq[String]("render_full", t)
+    else h.fail("'t' should be a string")
+    end
+    match obj("s")?
+    | let s: json.JsonArray =>
+      h.assert_eq[USize](2, s.size())
+      match s(0)?
+      | let v: String => h.assert_eq[String]("<div>", v)
+      else h.fail("s(0) should be a string")
+      end
+      match s(1)?
+      | let v: String => h.assert_eq[String]("</div>", v)
+      else h.fail("s(1) should be a string")
+      end
+    else h.fail("'s' should be a JsonArray")
+    end
+    match obj("d")?
+    | let d: json.JsonArray =>
+      h.assert_eq[USize](1, d.size())
+      match d(0)?
+      | let v: String => h.assert_eq[String]("42", v)
+      else h.fail("d(0) should be a string")
+      end
+    else h.fail("'d' should be a JsonArray")
+    end
+
+class \nodoc\ _TestEncodeRenderDiff is UnitTest
+  fun name(): String => "wire_protocol/encode_render_diff"
+
+  fun apply(h: TestHelper) ? =>
+    let changes: Array[(USize, String)] val = [(0, "43"); (2, "new")]
+    let encoded = _WireProtocol.encode_render_diff(changes)
+    let obj = match json.JsonParser.parse(encoded)
+      | let o: json.JsonObject => o
+      else h.fail("expected JsonObject"); error
+      end
+    match obj("t")?
+    | let t: String => h.assert_eq[String]("render_diff", t)
+    else h.fail("'t' should be a string")
+    end
+    match obj("d")?
+    | let d: json.JsonObject =>
+      match d("0")?
+      | let v: String => h.assert_eq[String]("43", v)
+      else h.fail("d('0') should be a string")
+      end
+      match d("2")?
+      | let v: String => h.assert_eq[String]("new", v)
+      else h.fail("d('2') should be a string")
+      end
+    else h.fail("'d' should be a JsonObject")
+    end
+
+class \nodoc\ _TestEncodeRenderDiffEmpty is UnitTest
+  fun name(): String => "wire_protocol/encode_render_diff_empty"
+
+  fun apply(h: TestHelper) ? =>
+    let changes: Array[(USize, String)] val =
+      recover val Array[(USize, String)] end
+    let encoded = _WireProtocol.encode_render_diff(changes)
+    let obj = match json.JsonParser.parse(encoded)
+      | let o: json.JsonObject => o
+      else h.fail("expected JsonObject"); error
+      end
+    match obj("t")?
+    | let t: String => h.assert_eq[String]("render_diff", t)
+    else h.fail("'t' should be a string")
+    end
+    match obj("d")?
+    | let d: json.JsonObject =>
+      h.assert_eq[USize](0, d.size())
+    else h.fail("'d' should be a JsonObject")
+    end
+
+// --- LiveView default render_parts test ---
+
+class \nodoc\ _TestLiveViewRenderPartsDefault is UnitTest
+  fun name(): String => "live_view/render_parts_default"
+
+  fun apply(h: TestHelper) =>
+    let view: LiveView ref = _DummyView
+    let sink: _RenderSink ref = _RenderSink
+    let assigns = Assigns
+    h.assert_false(view.render_parts(assigns, sink),
+      "default render_parts should return false")

@@ -1,4 +1,5 @@
 use json = "json"
+use templates = "templates"
 
 trait LiveView
   """
@@ -53,3 +54,29 @@ trait LiveView
     The returned HTML must have a single root element (e.g., wrapped in a
     `<div>`) for morphdom to work correctly during DOM patching.
     """
+
+  fun box render_parts(assigns: Assigns box,
+    sink: templates.TemplateSink ref): Bool
+  =>
+    """
+    Drive the given sink with static/dynamic template output for efficient
+    wire updates.
+
+    When this returns true, the framework sends static template parts once
+    per connection and only changed dynamic slot values on subsequent
+    renders. When it returns false (the default), the framework falls back
+    to `render()` and sends full HTML every time.
+
+    Override this to enable split rendering. Typical implementation:
+
+        fun box render_parts(assigns: Assigns box,
+          sink: templates.TemplateSink ref): Bool
+        =>
+          try
+            _template.render_to(sink, assigns.template_values())?
+            true
+          else
+            false
+          end
+    """
+    false

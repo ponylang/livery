@@ -101,6 +101,33 @@ When the JS client opens the WebSocket, the server mounts a fresh view
 (producing identical initial HTML), and morphdom silently patches the
 pre-rendered DOM with no visible change.
 
+## Split Rendering
+
+By default, the framework sends the full HTML string on every re-render.
+For views with large templates where only a few values change between
+renders, override `render_parts` to enable split rendering — the framework
+sends static template parts once per connection and only changed dynamic
+slot values on subsequent renders.
+
+```pony
+fun box render_parts(assigns: Assigns box,
+  sink: templates.TemplateSink ref): Bool
+=>
+  try
+    _template.render_to(sink, assigns.template_values())?
+    true
+  else
+    false
+  end
+```
+
+When `render_parts` returns `true`, the framework uses the split wire
+protocol (`render_full` on first render, `render_diff` on subsequent
+renders with changes). When it returns `false` (the default), the
+framework falls back to `render()` and sends full HTML. Both paths can
+coexist — a view that implements both methods gets split rendering over
+WebSocket while `PageRenderer` continues to use `render()` for HTTP.
+
 ## Getting Started
 
 1. Implement the `LiveView` trait on a class

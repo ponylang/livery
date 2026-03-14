@@ -127,16 +127,27 @@ class TodoListView is LiveView
       end
     end
 
-  fun box render(assigns: Assigns box): String ? =>
+  fun box _prepare_values(assigns: Assigns box): TemplateValues =>
     let vals = assigns.render_values()
     var items = ""
     for id in _todo_ids.values() do
-      try
-        items = items + assigns.component_html(id)?
-      end
+      try items = items + assigns.component_html(id)? end
     end
     vals.unescaped("items_html", items)
-    _template.render(vals)?
+    vals
+
+  fun box render(assigns: Assigns box): String ? =>
+    _template.render(_prepare_values(assigns))?
+
+  fun box render_parts(assigns: Assigns box,
+    sink: TemplateSink ref): Bool
+  =>
+    try
+      _template.render_to(sink, _prepare_values(assigns))?
+      true
+    else
+      false
+    end
 
 
 actor Main

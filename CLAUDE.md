@@ -1,6 +1,6 @@
 # Livery
 
-Server-side Pony library for building interactive LiveView UIs over WebSocket. Sends full HTML on each state change; the JS client (in `client/`) patches the DOM with morphdom.
+Server-side Pony library for building interactive LiveView UIs over WebSocket. Supports two rendering modes: full HTML on each state change (default), or split rendering that sends static template parts once and only changed dynamic values on subsequent renders. The JS client (in `client/`) patches the DOM with morphdom.
 
 ## Building
 
@@ -17,7 +17,7 @@ Targets: `make test` (build + run tests + build examples), `make unit-tests` (te
 | Package | Version | Use path | Role |
 |---------|---------|----------|------|
 | mare | 0.2.0 | `"mare"` | WebSocket server (connection actor implements `WebSocketServerActor`) |
-| templates | 0.3.1 | `"templates"` | HTML rendering (`HtmlTemplate` auto-escapes by default, `TemplateValues.scope()` for child scopes) |
+| templates | 0.3.2 | `"templates"` | HTML rendering (`HtmlTemplate` auto-escapes by default, `TemplateValues.scope()` for child scopes, `TemplateSink`/`render_to()` for split rendering) |
 | json-ng | 0.3.0 | `"json"` | Wire protocol serialization (persistent `JsonObject`/`JsonArray`) |
 | hobby | 0.2.1 | `"hobby"` | HTTP server (used in SSR example for dynamic first paint) |
 | lori | (transitive via mare) | `"lori"` | TCP networking, idle timeout |
@@ -26,7 +26,7 @@ Targets: `make test` (build + run tests + build examples), `make unit-tests` (te
 
 ### Public API
 
-- `LiveView` trait — user implements `mount`, `handle_event`, `handle_info`, `render`
+- `LiveView` trait — user implements `mount`, `handle_event`, `handle_info`, `render`; optionally `render_parts` for split rendering
 - `LiveComponent` trait — stateful component with `mount`, `update`, `handle_event`, `render`
 - `Assigns` — key-value store with dirty tracking, backed by `TemplateValues`. Also provides `component_html(id)` for reading rendered component output and `render_values()` for creating a writable child scope during render.
 - `Socket` — user-facing handle passed to `LiveView` lifecycle methods; provides `connected()`, `self()`, `subscribe(topic)`, `unsubscribe(topic)`, `register_component(id, component)`, `unregister_component(id)`, `update_component(id, data)`
@@ -41,8 +41,10 @@ Targets: `make test` (build + run tests + build examples), `make unit-tests` (te
 
 ### Internal
 
-- `_Connection` — one actor per client, implements `WebSocketServerActor`. Two-phase init: view is `None` until `on_open` delivers the URI for route lookup. Has `info` behavior for external message delivery; cleans up PubSub subscriptions in `on_closed`. Owns the `_ComponentRegistry` and integrates component rendering into the render cycle.
+- `_Connection` — one actor per client, implements `WebSocketServerActor`. Two-phase init: view is `None` until `on_open` delivers the URI for route lookup. Has `info` behavior for external message delivery; cleans up PubSub subscriptions in `on_closed`. Owns the `_ComponentRegistry`, `_RenderSink`, and integrates component rendering into the render cycle. Uses `_try_split_render` to attempt split rendering before falling back to full HTML.
 - `_ComponentRegistry` — per-connection registry of stateful components. Manages lifecycle (mount, update, render), event routing, change tracking, and resource limits (max 256 components, max 16 render depth by default).
+- `_RenderSink` — per-connection sink implementing `TemplateSink`. Caches statics, tracks previous dynamics, computes incremental diffs in a single pass during template walk. Transaction pattern: `begin()` → template walk → `result()` or `abandon()`.
+- `_RenderDiff` — union type: `_FullRender` (statics + all dynamics), `_SlotDiff` (changed indices + values), `_NoChange`.
 - `_WireProtocol` — JSON encode/decode for the client-server wire format.
 - `_NullInfoReceiver` — no-op actor satisfying `InfoReceiver` for disconnected sockets.
 - `_Unreachable` — panic primitive for impossible code paths.
@@ -50,9 +52,11 @@ Targets: `make test` (build + run tests + build examples), `make unit-tests` (te
 ### Wire Protocol (JSON over WebSocket)
 
 Client → Server: `{"t":"event","e":"name","p":{...}}`, `{"t":"event","e":"name","p":{...},"c":"component-id"}`, `{"t":"heartbeat"}`
-Server → Client: `{"t":"render","html":"..."}`, `{"t":"heartbeat_ack"}`, `{"t":"push","e":"name","p":{...}}`, `{"t":"error","reason":"..."}`
+Server → Client: `{"t":"render","html":"..."}`, `{"t":"render_full","s":[...],"d":[...]}`, `{"t":"render_diff","d":{"0":"val",...}}`, `{"t":"heartbeat_ack"}`, `{"t":"push","e":"name","p":{...}}`, `{"t":"error","reason":"..."}`
 
 The optional `"c"` field on event messages targets a specific component. When absent, events route to the parent `LiveView`.
+
+`render` sends full HTML (fallback path). `render_full` sends static template parts (`s` array) and all dynamic values (`d` array) on first render or template change. `render_diff` sends only changed dynamic slot values as an object with string index keys.
 
 ## File Layout
 
@@ -73,6 +77,7 @@ livery/           # Library package (also the test compilation target)
   listener.pony   # Listener actor
   _connection.pony # Connection actor (internal)
   _component_registry.pony # Component registry (internal)
+  _render_sink.pony # Split render sink + diff types (internal)
   _wire_protocol.pony # Wire protocol (internal)
   _unreachable.pony   # Panic primitive (internal)
   _test.pony      # All tests (single runner)
@@ -134,4 +139,4 @@ make client-build
 - Qualified imports in library code: `use json = "json"`, `use mare = "mare"`, etc.
 - Single test runner in `livery/_test.pony` with `Main is TestList`.
 - `\nodoc\` on all test types.
-- Property-based tests (PonyCheck) for Assigns; example-based for wire protocol, router, socket, PubSub, components.
+- Property-based tests (PonyCheck) for Assigns and RenderSink; example-based for wire protocol, router, socket, PubSub, components.

@@ -302,6 +302,151 @@ describe("LiveView", () => {
     Math.random.mockRestore();
   });
 
+  it("renders HTML from render_full message", () => {
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    ws().simulateMessage(
+      '{"t":"render_full","s":["<div>","</div>"],"d":["hello"]}'
+    );
+
+    expect(target.innerHTML).toBe("<div>hello</div>");
+  });
+
+  it("renders render_full with empty dynamics (static-only template)", () => {
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    ws().simulateMessage(
+      '{"t":"render_full","s":["<p>static</p>"],"d":[]}'
+    );
+
+    expect(target.innerHTML).toBe("<p>static</p>");
+  });
+
+  it("patches only changed dynamics on render_diff", () => {
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    // First: full render with two dynamics
+    ws().simulateMessage(
+      '{"t":"render_full","s":["<div><span>","</span><span>","</span></div>"],"d":["a","b"]}'
+    );
+    expect(target.querySelector("div")).toBeTruthy();
+    const spans = target.querySelectorAll("span");
+    expect(spans[0].textContent).toBe("a");
+    expect(spans[1].textContent).toBe("b");
+
+    const div = target.querySelector("div");
+
+    // Second: diff only slot 0
+    ws().simulateMessage('{"t":"render_diff","d":{"0":"changed"}}');
+
+    // Same DOM node preserved
+    expect(target.querySelector("div")).toBe(div);
+    const updatedSpans = target.querySelectorAll("span");
+    expect(updatedSpans[0].textContent).toBe("changed");
+    expect(updatedSpans[1].textContent).toBe("b");
+  });
+
+  it("ignores render_diff before render_full", () => {
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    // No render_full yet — diff should be silently dropped
+    ws().simulateMessage('{"t":"render_diff","d":{"0":"x"}}');
+
+    expect(target.innerHTML).toBe("");
+  });
+
+  it("resets split state on reconnect", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    ws().simulateMessage(
+      '{"t":"render_full","s":["<div>","</div>"],"d":["first"]}'
+    );
+    expect(target.innerHTML).toBe("<div>first</div>");
+
+    // Disconnect and reconnect
+    ws().simulateClose();
+    vi.advanceTimersByTime(1000);
+    ws().simulateOpen();
+
+    // After reconnect, render_diff without render_full should be dropped
+    ws().simulateMessage('{"t":"render_diff","d":{"0":"stale"}}');
+    // Content should still be from the first render_full
+    expect(target.querySelector("div").textContent).toBe("first");
+
+    // New render_full works after reconnect
+    ws().simulateMessage(
+      '{"t":"render_full","s":["<div>","</div>"],"d":["reconnected"]}'
+    );
+    expect(target.querySelector("div").textContent).toBe("reconnected");
+
+    Math.random.mockRestore();
+  });
+
+  it("legacy render clears split state", () => {
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    // Start with split rendering
+    ws().simulateMessage(
+      '{"t":"render_full","s":["<div>","</div>"],"d":["split"]}'
+    );
+    expect(target.querySelector("div").textContent).toBe("split");
+
+    // Switch to legacy full-HTML render
+    ws().simulateMessage('{"t":"render","html":"<div>legacy</div>"}');
+    expect(target.querySelector("div").textContent).toBe("legacy");
+
+    // render_diff should be ignored now (split state cleared)
+    ws().simulateMessage('{"t":"render_diff","d":{"0":"stale"}}');
+    expect(target.querySelector("div").textContent).toBe("legacy");
+  });
+
+  it("uses morphdom for split render with pre-rendered content", () => {
+    // Pre-rendered content
+    target.innerHTML = '<div id="app">Count: 0</div>';
+    const preRenderedDiv = target.querySelector("#app");
+
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    // Server sends render_full matching pre-rendered content
+    ws().simulateMessage(
+      '{"t":"render_full","s":["<div id=\\"app\\">Count: ","</div>"],"d":["0"]}'
+    );
+
+    // morphdom should preserve the original DOM node
+    expect(target.querySelector("#app")).toBe(preRenderedDiv);
+  });
+
+  it("ignores out-of-bounds diff indices", () => {
+    const lv = createLiveView();
+    lv.connect();
+    ws().simulateOpen();
+
+    // 1 dynamic slot
+    ws().simulateMessage(
+      '{"t":"render_full","s":["<div>","</div>"],"d":["ok"]}'
+    );
+
+    // Diff with out-of-bounds index should not crash
+    ws().simulateMessage('{"t":"render_diff","d":{"5":"bad"}}');
+    expect(target.querySelector("div").textContent).toBe("ok");
+  });
+
   it("does not throw on error messages", () => {
     const lv = createLiveView();
     lv.connect();

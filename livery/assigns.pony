@@ -47,7 +47,8 @@ class Assigns
 
   fun box template_values(): templates.TemplateValues box =>
     """
-    Return the backing TemplateValues for use with `HtmlTemplate.render()`.
+    Return the backing TemplateValues for use with `HtmlTemplate.render()`
+    or `HtmlTemplate.render_to()`.
     """
     _values
 
@@ -55,7 +56,7 @@ class Assigns
     """
     Look up the rendered HTML for a registered component.
 
-    Use this in `render()` to include component output in the parent's
+    Use this in `render()` or `render_parts()` to include component output in the parent's
     HTML. The returned string is already escaped by the component's own
     `HtmlTemplate` -- insert it as `TemplateValue.unescaped()` in the
     parent's template values.
@@ -80,7 +81,7 @@ class Assigns
     """
     Create a writable child scope of the backing template values.
 
-    Use this in `render()` to overlay component HTML or computed values
+    Use this in `render()` or `render_parts()` to overlay component HTML or computed values
     onto the existing assigns without modifying the underlying state.
     The child scope falls through to the parent for lookups, so all
     existing assigns remain accessible.

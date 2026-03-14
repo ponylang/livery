@@ -67,4 +67,46 @@ describe("decodeServerMessage", () => {
     const msg = decodeServerMessage("not json");
     expect(msg).toEqual({ type: "unknown" });
   });
+
+  it("parses render_full message with statics and dynamics", () => {
+    const msg = decodeServerMessage(
+      '{"t":"render_full","s":["<div>","</div>"],"d":["42"]}'
+    );
+    expect(msg).toEqual({
+      type: "render_full",
+      statics: ["<div>", "</div>"],
+      dynamics: ["42"],
+    });
+  });
+
+  it("parses render_diff message with dynamics object", () => {
+    const msg = decodeServerMessage(
+      '{"t":"render_diff","d":{"0":"43","2":"new"}}'
+    );
+    expect(msg).toEqual({
+      type: "render_diff",
+      dynamics: { "0": "43", "2": "new" },
+    });
+  });
+
+  it("parses render_full with empty dynamics", () => {
+    const msg = decodeServerMessage(
+      '{"t":"render_full","s":["<p>static</p>"],"d":[]}'
+    );
+    expect(msg).toEqual({
+      type: "render_full",
+      statics: ["<p>static</p>"],
+      dynamics: [],
+    });
+  });
+
+  it("parses render_diff with multiple changed slots", () => {
+    const msg = decodeServerMessage(
+      '{"t":"render_diff","d":{"0":"a","1":"b","3":"c"}}'
+    );
+    expect(msg).toEqual({
+      type: "render_diff",
+      dynamics: { "0": "a", "1": "b", "3": "c" },
+    });
+  });
 });

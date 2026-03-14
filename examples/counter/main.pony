@@ -35,6 +35,16 @@ class CounterView is LiveView
   fun box render(assigns: Assigns box): String ? =>
     _template.render(assigns.template_values())?
 
+  fun box render_parts(assigns: Assigns box,
+    sink: TemplateSink ref): Bool
+  =>
+    try
+      _template.render_to(sink, assigns.template_values())?
+      true
+    else
+      false
+    end
+
 actor Main
   new create(env: Env) =>
     let router = Router

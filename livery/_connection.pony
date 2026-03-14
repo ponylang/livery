@@ -20,6 +20,7 @@ actor _Connection is mare.WebSocketServerActor
   let _router: Routes val
   let _pub_sub: PubSub tag
   let _components: _ComponentRegistry ref
+  let _render_sink: _RenderSink ref = _RenderSink
 
   new create(auth: lori.TCPServerAuth, fd: U32,
     config: mare.WebSocketConfig val, routes: Routes val,
@@ -59,14 +60,16 @@ actor _Connection is mare.WebSocketServerActor
     end
     _components.populate_component_html(_assigns)
 
-    try
-      let html = view.render(_assigns)?
-      _last_html = html
-      _ws.send_text(_WireProtocol.encode_render(html))
-    else
-      _ws.send_text(_WireProtocol.encode_error("render_failed"))
-      _ws.close()
-      return
+    if not _try_split_render(view) then
+      try
+        let html = view.render(_assigns)?
+        _last_html = html
+        _ws.send_text(_WireProtocol.encode_render(html))
+      else
+        _ws.send_text(_WireProtocol.encode_error("render_failed"))
+        _ws.close()
+        return
+      end
     end
     _assigns.clear_changes()
     _assigns._clear_component_html()
@@ -120,17 +123,45 @@ actor _Connection is mare.WebSocketServerActor
     end
     if _assigns.changed() or components_changed then
       _components.populate_component_html(_assigns)
-      try
-        let html = v.render(_assigns)?
-        _last_html = html
-        _ws.send_text(_WireProtocol.encode_render(html))
-      else
-        _ws.send_text(_WireProtocol.encode_error("render_failed"))
+      if not _try_split_render(v) then
+        _render_sink.clear()
+        try
+          let html = v.render(_assigns)?
+          _last_html = html
+          _ws.send_text(_WireProtocol.encode_render(html))
+        else
+          _ws.send_text(_WireProtocol.encode_error("render_failed"))
+        end
       end
       _assigns.clear_changes()
       _assigns._clear_component_html()
     end
     _flush_pending_events()
+
+  fun ref _try_split_render(v: LiveView ref): Bool =>
+    """
+    Attempt a split render. Returns true if the split path handled rendering
+    (even if the diff was _NoChange). Returns false if the view doesn't
+    support split rendering, meaning the caller should fall back to render().
+    """
+    _render_sink.begin()
+    if v.render_parts(_assigns, _render_sink) then
+      match _render_sink.result()
+      | let full: _FullRender =>
+        _last_html = _render_sink.full_html()
+        _ws.send_text(
+          _WireProtocol.encode_render_full(full.statics, full.dynamics))
+      | let diff: _SlotDiff =>
+        _last_html = _render_sink.full_html()
+        _ws.send_text(
+          _WireProtocol.encode_render_diff(diff.changes))
+      | _NoChange => None
+      end
+      true
+    else
+      _render_sink.abandon()
+      false
+    end
 
   fun ref _flush_pending_events() =>
     for (event, payload) in _pending_events.values() do

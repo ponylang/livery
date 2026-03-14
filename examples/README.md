@@ -1,6 +1,6 @@
 # Examples
 
-Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. The counter, ticker, form, and todo examples each include an `index.html` file that connects to the running server via the JavaScript client. The ssr example dynamically renders its HTML via an HTTP server using `PageRenderer`.
+Each subdirectory is a self-contained Pony program demonstrating a different part of the livery library. All examples implement both `render` and `render_parts` to demonstrate split rendering — the framework sends static template parts once per connection and only changed dynamic values on subsequent renders. The counter, ticker, form, and todo examples each include an `index.html` file that connects to the running server via the JavaScript client. The ssr example dynamically renders its HTML via an HTTP server using `PageRenderer`.
 
 ## Running examples
 

@@ -4,7 +4,7 @@ A library for building interactive, server-rendered LiveView UIs over WebSocket 
 
 ## Status
 
-Livery is pre-release software under active development. Expect breaking changes.
+Livery is beta quality software that will change frequently. Expect breaking changes. That said, you should feel comfortable using it in your projects.
 
 ## Installation
 

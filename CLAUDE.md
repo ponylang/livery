@@ -10,7 +10,7 @@ make test ssl=openssl_3.0.x
 
 The `ssl` flag is required because mare (WebSocket transport) depends on the ssl package transitively. On machines with OpenSSL 3.x, use `ssl=openssl_3.0.x`.
 
-Targets: `make test` (build + run tests + build examples), `make unit-tests` (tests only), `make examples` (examples only), `make clean`. JS client targets: `make client-test`, `make client-build`.
+Targets: `make test` (build + run tests + build examples), `make unit-tests` (tests only), `make test-one t=TestName ssl=openssl_3.0.x` (run a single test by name), `make examples` (examples only), `make clean`. JS client targets: `make client-test`, `make client-build`.
 
 ## Dependencies
 

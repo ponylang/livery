@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 
+- Fix WebSocket connections hanging on shutdown when client disconnects ([PR #35](https://github.com/ponylang/livery/pull/35))
+- Fix idle timeout firing prematurely on TLS WebSocket connections ([PR #35](https://github.com/ponylang/livery/pull/35))
 
 ### Added
 

@@ -16,7 +16,7 @@ Targets: `make test` (build + run tests + build examples), `make unit-tests` (te
 
 | Package | Version | Use path | Role |
 |---------|---------|----------|------|
-| mare | 0.2.0 | `"mare"` | WebSocket server (connection actor implements `WebSocketServerActor`) |
+| mare | 0.2.2 | `"mare"` | WebSocket server (connection actor implements `WebSocketServerActor`) |
 | templates | 0.3.2 | `"templates"` | HTML rendering (`HtmlTemplate` auto-escapes by default, `TemplateValues.scope()` for child scopes, `TemplateSink`/`render_to()` for split rendering) |
 | hobby | 0.2.1 | `"hobby"` | HTTP server (used in SSR example for dynamic first paint) |
 | lori | (transitive via mare) | `"lori"` | TCP networking, idle timeout |

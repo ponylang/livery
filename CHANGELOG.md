@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Changed
 
+- Update hobby dependency to 0.4.0 ([PR #36](https://github.com/ponylang/livery/pull/36))
 
 ## [0.1.1] - 2026-03-22
 

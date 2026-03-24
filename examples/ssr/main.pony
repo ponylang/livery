@@ -48,49 +48,6 @@ class CounterView is LiveView
       false
     end
 
-class val IndexHandler is hobby.Handler
-  """
-  Serves the initial HTML page with server-rendered content.
-
-  Calls `PageRenderer.render` to produce the counter's HTML at request time,
-  embeds it in a full page shell, and responds with `text/html`. The JS client
-  takes over when the WebSocket connects — morphdom patches the pre-rendered
-  DOM without a visible flash.
-  """
-  let _factory: Factory
-
-  new val create(factory: Factory) =>
-    _factory = factory
-
-  fun apply(ctx: hobby.Context ref) =>
-    let body = match PageRenderer.render(_factory)
-    | let html: String val =>
-      "<!DOCTYPE html>\n"
-        + "<html>\n"
-        + "<head><title>SSR Counter - Livery Example</title></head>\n"
-        + "<body>\n"
-        + "  <div id=\"lv-root\">" + html + "</div>\n"
-        + "  <script src=\"/client/livery.iife.js\"></script>\n"
-        + "  <script>\n"
-        + "    new LiveView({\n"
-        + "      url: \"ws://localhost:8084/ssr\",\n"
-        + "      target: document.getElementById(\"lv-root\")\n"
-        + "    }).connect();\n"
-        + "  </script>\n"
-        + "</body>\n"
-        + "</html>"
-    | let err: PageRenderError =>
-      ctx.respond(stallion.StatusInternalServerError, err.string())
-      return
-    end
-    let headers = recover val
-      let h = stallion.Headers
-      h.set("Content-Type", "text/html; charset=utf-8")
-      h.set("Content-Length", body.size().string())
-      h
-    end
-    ctx.respond_with_headers(stallion.StatusOK, headers, consume body)
-
 actor Main
   new create(env: Env) =>
     let factory: Factory =
@@ -105,7 +62,47 @@ actor Main
     // HTTP server for initial page load and static assets
     let client_root = FilePath(FileAuth(env.root), "client/dist")
     hobby.Application
-      .>get("/", IndexHandler(factory))
+      .>get("/", _index_handler(factory))
       .>get("/client/*filepath", hobby.ServeFiles(client_root))
       .serve(lori.TCPListenAuth(env.root), stallion.ServerConfig("0.0.0.0",
         "8085"), env.err)
+
+  fun _index_handler(factory: Factory): hobby.HandlerFactory =>
+    """
+    Serves the initial HTML page with server-rendered content.
+
+    Calls `PageRenderer.render` to produce the counter's HTML at request time,
+    embeds it in a full page shell, and responds with `text/html`. The JS client
+    takes over when the WebSocket connects — morphdom patches the pre-rendered
+    DOM without a visible flash.
+    """
+    {(ctx)(factory) =>
+      let handler = hobby.RequestHandler(consume ctx)
+      let body = match PageRenderer.render(factory)
+      | let html: String val =>
+        "<!DOCTYPE html>\n"
+          + "<html>\n"
+          + "<head><title>SSR Counter - Livery Example</title></head>\n"
+          + "<body>\n"
+          + "  <div id=\"lv-root\">" + html + "</div>\n"
+          + "  <script src=\"/client/livery.iife.js\"></script>\n"
+          + "  <script>\n"
+          + "    new LiveView({\n"
+          + "      url: \"ws://localhost:8084/ssr\",\n"
+          + "      target: document.getElementById(\"lv-root\")\n"
+          + "    }).connect();\n"
+          + "  </script>\n"
+          + "</body>\n"
+          + "</html>"
+      | let err: PageRenderError =>
+        handler.respond(stallion.StatusInternalServerError, err.string())
+        return
+      end
+      let headers = recover val
+        let h = stallion.Headers
+        h.set("Content-Type", "text/html; charset=utf-8")
+        h.set("Content-Length", body.size().string())
+        h
+      end
+      handler.respond_with_headers(stallion.StatusOK, headers, consume body)
+    } val

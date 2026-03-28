@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 
+- Fix crash when a WebSocket connection is disposed before initialization completes ([PR #39](https://github.com/ponylang/livery/pull/39))
 
 ### Added
 

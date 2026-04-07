@@ -48,7 +48,7 @@ class CounterView is LiveView
       false
     end
 
-actor Main
+actor Main is hobby.ServerNotify
   new create(env: Env) =>
     let factory: Factory =
       {(): LiveView ref^ ? => CounterView.create()?} val
@@ -61,11 +61,16 @@ actor Main
 
     // HTTP server for initial page load and static assets
     let client_root = FilePath(FileAuth(env.root), "client/dist")
-    hobby.Application
+    let app = hobby.Application
       .>get("/", _index_handler(factory))
       .>get("/client/*filepath", hobby.ServeFiles(client_root))
-      .serve(lori.TCPListenAuth(env.root), stallion.ServerConfig("0.0.0.0",
-        "8085"), env.err)
+    match app.build()
+    | let built: hobby.BuiltApplication =>
+      hobby.Server(lori.TCPListenAuth(env.root), built, this
+        where host = "0.0.0.0", port = "8085")
+    | let err: hobby.ConfigError =>
+      env.err.print(err.message)
+    end
 
   fun _index_handler(factory: Factory): hobby.HandlerFactory =>
     """

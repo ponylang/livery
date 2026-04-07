@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 
+- Fix connection stall after large message with backpressure ([PR #42](https://github.com/ponylang/livery/pull/42))
 
 ### Added
 

@@ -13,7 +13,7 @@
   "deps": [
     {
       "locator": "github.com/ponylang/mare.git",
-      "version": "0.2.3"
+      "version": "0.2.4"
     },
     {
       "locator": "github.com/ponylang/templates.git",

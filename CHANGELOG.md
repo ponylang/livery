@@ -2,14 +2,11 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/) and [Keep a CHANGELOG](http://keepachangelog.com/).
 
-## [unreleased] - unreleased
+## [0.2.0] - 2026-04-12
 
 ### Fixed
 
 - Fix potential connection hang when timer event subscription fails ([PR #44](https://github.com/ponylang/livery/pull/44))
-
-### Added
-
 
 ### Changed
 

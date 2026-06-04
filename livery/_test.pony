@@ -300,7 +300,7 @@ class \nodoc\ _TestDecodeEvent is UnitTest
       .update("t", "event")
       .update("e", "increment")
       .update("p", json.JsonObject.update("value", "5"))
-      .string()
+      .print()
 
     match _WireProtocol.decode_client_message(consume data)
     | let msg: _EventMessage =>
@@ -328,7 +328,7 @@ class \nodoc\ _TestDecodeHeartbeat is UnitTest
   fun apply(h: TestHelper) =>
     let data = json.JsonObject
       .update("t", "heartbeat")
-      .string()
+      .print()
 
     match _WireProtocol.decode_client_message(consume data)
     | _HeartbeatMessage => None
@@ -353,7 +353,7 @@ class \nodoc\ _TestDecodeMissingType is UnitTest
   fun apply(h: TestHelper) =>
     let data = json.JsonObject
       .update("e", "increment")
-      .string()
+      .print()
 
     match _WireProtocol.decode_client_message(consume data)
     | let err: _WireError =>
@@ -368,7 +368,7 @@ class \nodoc\ _TestDecodeUnknownType is UnitTest
   fun apply(h: TestHelper) =>
     let data = json.JsonObject
       .update("t", "bogus")
-      .string()
+      .print()
 
     match _WireProtocol.decode_client_message(consume data)
     | let err: _WireError =>
@@ -1007,7 +1007,7 @@ class \nodoc\ _TestDecodeEventWithTarget is UnitTest
       .update("e", "toggle")
       .update("p", json.JsonObject.update("id", "3"))
       .update("c", "todo-3")
-      .string()
+      .print()
 
     match _WireProtocol.decode_client_message(consume data)
     | let msg: _EventMessage =>
@@ -1028,7 +1028,7 @@ class \nodoc\ _TestDecodeEventWithoutTarget is UnitTest
       .update("t", "event")
       .update("e", "click")
       .update("p", None)
-      .string()
+      .print()
 
     match _WireProtocol.decode_client_message(consume data)
     | let msg: _EventMessage =>
@@ -1050,7 +1050,7 @@ class \nodoc\ _TestDecodeEventNonStringTarget is UnitTest
       .update("e", "click")
       .update("p", None)
       .update("c", I64(42))
-      .string()
+      .print()
 
     match _WireProtocol.decode_client_message(consume data)
     | let err: _WireError =>

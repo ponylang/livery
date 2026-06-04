@@ -11,7 +11,7 @@ primitive _WireProtocol
     json.JsonObject
       .update("t", "render")
       .update("html", html)
-      .string()
+      .print()
 
   fun encode_render_full(statics: Array[String] val,
     dynamics: Array[String] val): String val
@@ -32,7 +32,7 @@ primitive _WireProtocol
       .update("t", "render_full")
       .update("s", s_arr)
       .update("d", d_arr)
-      .string()
+      .print()
 
   fun encode_render_diff(
     changes: Array[(USize, String)] val): String val
@@ -48,7 +48,7 @@ primitive _WireProtocol
     json.JsonObject
       .update("t", "render_diff")
       .update("d", d_obj)
-      .string()
+      .print()
 
   fun encode_heartbeat_ack(): String val =>
     """
@@ -56,7 +56,7 @@ primitive _WireProtocol
     """
     json.JsonObject
       .update("t", "heartbeat_ack")
-      .string()
+      .print()
 
   fun encode_push_event(event: String val, payload: json.JsonValue)
     : String val
@@ -68,7 +68,7 @@ primitive _WireProtocol
       .update("t", "push")
       .update("e", event)
       .update("p", payload)
-      .string()
+      .print()
 
   fun encode_error(reason: String val): String val =>
     """
@@ -77,7 +77,7 @@ primitive _WireProtocol
     json.JsonObject
       .update("t", "error")
       .update("reason", reason)
-      .string()
+      .print()
 
   fun decode_client_message(data: String val)
     : (_ClientMessage | _WireError)

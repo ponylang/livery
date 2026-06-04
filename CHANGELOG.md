@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 
+- Fix compilation against ponyc 0.65.0 ([PR #54](https://github.com/ponylang/livery/pull/54))
 
 ### Added
 

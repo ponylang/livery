@@ -2,18 +2,12 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/) and [Keep a CHANGELOG](http://keepachangelog.com/).
 
-## [unreleased] - unreleased
+## [0.4.0] - 2026-06-27
 
 ### Fixed
 
 - Fix compilation against ponyc 0.65.0 ([PR #54](https://github.com/ponylang/livery/pull/54))
 - Fix connections going silent or truncating output under load ([PR #56](https://github.com/ponylang/livery/pull/56))
-
-### Added
-
-
-### Changed
-
 
 ## [0.3.0] - 2026-05-28
 

@@ -2,19 +2,15 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/) and [Keep a CHANGELOG](http://keepachangelog.com/).
 
-## [unreleased] - unreleased
+## [0.5.0] - 2026-06-30
 
 ### Fixed
 
 - Fix connections closed mid-transfer by the idle timeout ([PR #58](https://github.com/ponylang/livery/pull/58))
 
-### Added
-
-
 ### Changed
 
 - Drop support for Windows 10 ([PR #58](https://github.com/ponylang/livery/pull/58))
-
 
 ## [0.4.0] - 2026-06-27
 

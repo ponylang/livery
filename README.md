@@ -10,7 +10,7 @@ Livery is beta quality software that will change frequently. Expect breaking cha
 
 * Requires ponyc 0.65.0 or later. On Windows, requires ponyc 0.66.0 or later.
 * Install [corral](https://github.com/ponylang/corral)
-* `corral add github.com/ponylang/livery.git --version 0.4.0`
+* `corral add github.com/ponylang/livery.git --version 0.5.0`
 * `corral fetch` to fetch your dependencies
 * `use "livery"` to include this package
 * `corral run -- ponyc` to compile your application

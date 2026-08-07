@@ -6,11 +6,19 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 
+- Fix connections losing data when closed under backpressure ([PR #63](https://github.com/ponylang/livery/pull/63))
+- Fix connections hanging on close during message handling ([PR #63](https://github.com/ponylang/livery/pull/63))
+- Fix connections stalling under sustained write load ([PR #63](https://github.com/ponylang/livery/pull/63))
+- Fix SSL/TLS connection bugs ([PR #63](https://github.com/ponylang/livery/pull/63))
+- Fix a macOS bug where connecting could close an unrelated connection ([PR #63](https://github.com/ponylang/livery/pull/63))
+- Fix missing TLS close_notify on connection close ([PR #63](https://github.com/ponylang/livery/pull/63))
 
 ### Added
 
 
 ### Changed
+
+- Require ponyc 0.67.0 or later ([PR #63](https://github.com/ponylang/livery/pull/63))
 
 
 ## [0.5.0] - 2026-06-30

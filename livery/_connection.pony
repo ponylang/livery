@@ -22,8 +22,11 @@ actor _Connection is mare.WebSocketServerActor
   let _components: _ComponentRegistry ref
   let _render_sink: _RenderSink ref = _RenderSink
 
-  new create(auth: lori.TCPServerAuth, fd: U32,
-    config: mare.WebSocketConfig val, routes: Routes val,
+  new create(
+    auth: lori.TCPServerAuth,
+    fd: U32,
+    config: mare.WebSocketConfig val,
+    routes: Routes val,
     pub_sub: PubSub tag)
   =>
     _assigns = Assigns
@@ -38,7 +41,8 @@ actor _Connection is mare.WebSocketServerActor
     _ws
 
   fun ref on_open(request: mare.UpgradeRequest val) =>
-    let factory = match _router(request.uri)
+    let factory =
+      match \exhaustive\ _router(request.uri)
       | let f: Factory => f
       | None =>
         _ws.send_text(_WireProtocol.encode_error("no_route"))
@@ -46,7 +50,8 @@ actor _Connection is mare.WebSocketServerActor
         return
       end
 
-    let view = try factory()?
+    let view =
+      try factory()?
       else
         _ws.send_text(_WireProtocol.encode_error("factory_failed"))
         _ws.close()
@@ -83,12 +88,12 @@ actor _Connection is mare.WebSocketServerActor
   fun ref on_text_message(data: String val) =>
     match _view
     | let v: LiveView ref =>
-      match _WireProtocol.decode_client_message(data)
+      match \exhaustive\ _WireProtocol.decode_client_message(data)
       | let msg: _EventMessage =>
-        match msg.target
+        match \exhaustive\ msg.target
         | let component_id: String =>
-          if not _components.handle_event(component_id, msg.event,
-            msg.payload)
+          if not _components.handle_event(
+            component_id, msg.event, msg.payload)
           then
             _ws.send_text(
               _WireProtocol.encode_error("unknown_component"))
@@ -146,7 +151,7 @@ actor _Connection is mare.WebSocketServerActor
     """
     _render_sink.begin()
     if v.render_parts(_assigns, _render_sink) then
-      match _render_sink.result()
+      match \exhaustive\ _render_sink.result()
       | let full: _FullRender =>
         _last_html = _render_sink.full_html()
         _ws.send_text(

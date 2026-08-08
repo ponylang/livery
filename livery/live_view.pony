@@ -25,7 +25,9 @@ trait LiveView
     during HTTP render.
     """
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: Socket ref)
     """
     Called when the client sends a UI event (e.g., a button click or form

@@ -73,7 +73,9 @@ class _ComponentRegistry
       entry.component.update(socket)
     end
 
-  fun ref handle_event(id: String, event: String val,
+  fun ref handle_event(
+    id: String,
+    event: String val,
     payload: json.JsonValue): Bool
   =>
     """
@@ -153,7 +155,6 @@ class _ComponentRegistry
     for (id, entry) in _entries.pairs() do
       assigns._set_component_html(id, entry.last_html)
     end
-
 
 class _ComponentEntry
   """

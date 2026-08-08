@@ -36,7 +36,8 @@ primitive PageRenderer
     Returns the rendered HTML string on success, or a specific error
     indicating whether the factory or the render failed.
     """
-    let view = try factory()?
+    let view =
+      try factory()?
       else return PageRenderFactoryFailed
       end
     let assigns = Assigns

@@ -85,7 +85,8 @@ primitive _WireProtocol
     """
     Decode a client message from JSON.
     """
-    let obj = match json.JsonParser.parse(data)
+    let obj =
+      match json.JsonParser.parse(data)
       | let o: json.JsonObject => o
       else return _WireError("invalid JSON or not an object")
       end
@@ -141,7 +142,9 @@ class val _EventMessage
   let payload: json.JsonValue
   let target: (String val | None)
 
-  new val create(event': String val, payload': json.JsonValue,
+  new val create(
+    event': String val,
+    payload': json.JsonValue,
     target': (String val | None) = None)
   =>
     event = event'

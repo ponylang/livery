@@ -7,3 +7,6 @@ interface tag InfoReceiver
   inside a lifecycle method.
   """
   be info(message: Any val)
+    """
+    Deliver a message to the associated LiveView's `handle_info` callback.
+    """

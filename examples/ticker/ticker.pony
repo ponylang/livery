@@ -1,0 +1,3 @@
+"""
+Ticker example for Livery.
+"""

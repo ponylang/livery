@@ -9,8 +9,9 @@ primitive _Unreachable
   Prints location to stderr and terminates the process.
   """
   fun apply(loc: SourceLoc = __loc) =>
-    @fprintf(@pony_os_stderr(),
-      "Unreachable at %s:%lu. Please open an issue at https://github.com/ponylang/livery/issues\n"
-        .cstring(),
-      loc.file().cstring(), loc.line())
+    @fprintf(
+      @pony_os_stderr(),
+      "Unreachable at %s:%lu. Please open an issue.\n".cstring(),
+      loc.file().cstring(),
+      loc.line())
     @exit(1)

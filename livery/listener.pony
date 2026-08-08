@@ -15,8 +15,13 @@ actor Listener is lori.TCPListenerActor
   let _pub_sub: PubSub tag
   let _out: OutStream tag
 
-  new create(auth: lori.TCPListenAuth, host: String, port: String,
-    routes: Routes val, pub_sub: PubSub tag, out: OutStream tag)
+  new create(
+    auth: lori.TCPListenAuth,
+    host: String,
+    port: String,
+    routes: Routes val,
+    pub_sub: PubSub tag,
+    out: OutStream tag)
   =>
     _server_auth = lori.TCPServerAuth(auth)
     _config = mare.WebSocketConfig(host, port)

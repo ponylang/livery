@@ -14,8 +14,9 @@ class FormView is LiveView
   let _template: HtmlTemplate val
 
   new create() ? =>
-    _template = HtmlTemplate.parse(
-      """
+    _template =
+      HtmlTemplate.parse(
+        """
       <div>
         <h1>Register</h1>
         <form lv-change="validate" lv-submit="register">
@@ -41,6 +42,9 @@ class FormView is LiveView
       """)?
 
   fun ref mount(socket: Socket ref) =>
+    """
+    Initialize form fields and error messages to empty strings.
+    """
     socket.assign("username", "")
     socket.assign("email", "")
     socket.assign("password", "")
@@ -49,7 +53,9 @@ class FormView is LiveView
     socket.assign("password_error", "")
     socket.assign("result", "")
 
-  fun ref handle_event(event: String val, payload: JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: JsonValue,
     socket: Socket ref)
   =>
     let nav = JsonNav(payload)
@@ -65,15 +71,18 @@ class FormView is LiveView
       match event
       | "validate" =>
         // Only validate non-empty fields during typing
-        socket.assign("username_error",
+        socket.assign(
+          "username_error",
           if (username.size() > 0) and (username.size() < 3) then
             "Username must be at least 3 characters"
           else "" end)
-        socket.assign("email_error",
+        socket.assign(
+          "email_error",
           if (email.size() > 0) and (not email.contains("@")) then
             "Email must contain @"
           else "" end)
-        socket.assign("password_error",
+        socket.assign(
+          "password_error",
           if (password.size() > 0) and (password.size() < 8) then
             "Password must be at least 8 characters"
           else "" end)
@@ -102,7 +111,8 @@ class FormView is LiveView
         if (username_err == "") and (email_err == "")
           and (password_err == "")
         then
-          socket.assign("result",
+          socket.assign(
+            "result",
             "Registration successful for " + username + "!")
         else
           socket.assign("result", "")
@@ -126,8 +136,14 @@ class FormView is LiveView
 actor Main
   new create(env: Env) =>
     let router = Router
-    router.route("/form",
-      {(): LiveView ref^ ? => FormView.create()?} val)
+    router.route(
+      "/form",
+      {(): LiveView ref^ ? => FormView.create()? } val)
 
-    Listener(lori.TCPListenAuth(env.root), "0.0.0.0", "8083",
-      router.build(), PubSub, env.err)
+    Listener(
+      lori.TCPListenAuth(env.root),
+      "0.0.0.0",
+      "8083",
+      router.build(),
+      PubSub,
+      env.err)

@@ -12,3 +12,6 @@ interface val Factory
   ```
   """
   fun apply(): LiveView ref^ ?
+    """
+    Create a new LiveView instance.
+    """

@@ -41,7 +41,6 @@ class _RenderSink is templates.TemplateSink
   // Cached state from previous render
   var _cached_statics: (Array[String] val | None) = None
   var _prev_dynamics: (Array[String] val | None) = None
-
   // Transient state for the current render
   var _temp_statics: Array[String] iso = recover iso Array[String] end
   var _temp_dynamics: Array[String] iso = recover iso Array[String] end
@@ -120,12 +119,13 @@ class _RenderSink is templates.TemplateSink
       _temp_changes = recover iso Array[(USize, String)] end
 
     // Check for statics mismatch (count or content)
-    let statics_changed = _statics_mismatch
-      or match _cached_statics
-        | let cached: Array[String] val =>
-          cached.size() != new_statics.size()
-        | None => true
-        end
+    let statics_changed =
+      _statics_mismatch or
+      match \exhaustive\ _cached_statics
+      | let cached: Array[String] val =>
+        cached.size() != new_statics.size()
+      | None => true
+      end
 
     // Update cached state
     _cached_statics = new_statics

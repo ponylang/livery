@@ -1,0 +1,3 @@
+"""
+Counter example for Livery.
+"""

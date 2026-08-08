@@ -20,13 +20,14 @@ actor PubSub
     Add a subscriber to a topic. Idempotent — subscribing the same
     connection to the same topic twice has no additional effect.
     """
-    let subs = try
-      _topics(topic)?
-    else
-      let s = collections.SetIs[InfoReceiver tag]
-      _topics(topic) = s
-      s
-    end
+    let subs =
+      try
+        _topics(topic)?
+      else
+        let s = collections.SetIs[InfoReceiver tag]
+        _topics(topic) = s
+        s
+      end
     subs.set(subscriber)
 
   be unsubscribe(topic: String, subscriber: InfoReceiver tag) =>

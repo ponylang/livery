@@ -34,7 +34,9 @@ trait LiveComponent
     """
     None
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: ComponentSocket ref)
     """
     Called when the client sends an event targeted at this component

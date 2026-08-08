@@ -20,7 +20,7 @@ actor \nodoc\ Main is TestList
     // Wire protocol decode tests
     test(_TestDecodeEvent)
     test(_TestDecodeHeartbeat)
-    test(_TestDecodeInvalidJson)
+    test(_TestDecodeInvalidJSON)
     test(_TestDecodeMissingType)
     test(_TestDecodeUnknownType)
     // Router tests
@@ -65,16 +65,16 @@ actor \nodoc\ Main is TestList
     test(_TestRegistryRenderChanged)
     test(_TestRegistryRenderUnchangedCached)
     test(_TestRegistryRenderFailure)
-    test(_TestRegistryPopulateComponentHtml)
+    test(_TestRegistryPopulateComponentHTML)
     // Wire protocol component target tests
     test(_TestDecodeEventWithTarget)
     test(_TestDecodeEventWithoutTarget)
     test(_TestDecodeEventNonStringTarget)
     // Assigns component HTML tests
-    test(_TestAssignsComponentHtml)
-    test(_TestAssignsComponentHtmlUnknown)
-    test(_TestAssignsClearComponentHtml)
-    test(_TestAssignsComponentHtmlSeparateNamespace)
+    test(_TestAssignsComponentHTML)
+    test(_TestAssignsComponentHTMLUnknown)
+    test(_TestAssignsClearComponentHTML)
+    test(_TestAssignsComponentHTMLSeparateNamespace)
     test(_TestAssignsRenderValues)
     // Security tests
     test(_TestRegistryEmptyStringTarget)
@@ -99,7 +99,7 @@ actor \nodoc\ Main is TestList
     test(_TestRenderSinkAbandon)
     test(Property1UnitTest[(USize, Bool)](_TestRenderSinkDiffProperty))
     test(_TestRenderSinkFallbackPattern)
-    test(_TestRenderSinkFullHtmlBeforeRender)
+    test(_TestRenderSinkFullHTMLBeforeRender)
     // Wire protocol split render tests
     test(_TestEncodeRenderFull)
     test(_TestEncodeRenderDiff)
@@ -108,12 +108,13 @@ actor \nodoc\ Main is TestList
     test(_TestLiveViewRenderPartsDefault)
 
 // --- Test helpers ---
-
 class \nodoc\ _DummyView is LiveView
   new create() => None
   fun ref mount(socket: Socket ref) => None
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: Socket ref)
   =>
     None
@@ -172,7 +173,6 @@ actor \nodoc\ _DummyInfoReceiver is InfoReceiver
   be info(message: Any val) => None
 
 // --- Assigns property tests ---
-
 class \nodoc\ _AssignsDirtyTracking is Property1[String]
   fun name(): String => "assigns/dirty_tracking"
 
@@ -187,11 +187,12 @@ class \nodoc\ _AssignsDirtyTracking is Property1[String]
     h.assert_true(assigns.changed(), "update should make assigns dirty")
 
     assigns.clear_changes()
-    h.assert_false(assigns.changed(),
-      "clear_changes should reset dirty flag")
+    h.assert_false(
+      assigns.changed(), "clear_changes should reset dirty flag")
 
     assigns.update(key, "another")
-    h.assert_true(assigns.changed(),
+    h.assert_true(
+      assigns.changed(),
       "update after clear should make assigns dirty again")
 
 class \nodoc\ _AssignsValueRoundtrip is Property1[String]
@@ -220,13 +221,13 @@ class \nodoc\ _AssignsTemplateBridge is Property1[String]
     h.assert_eq[String](value, retrieved)
 
 // --- Wire protocol encode tests ---
-
 class \nodoc\ _TestEncodeRender is UnitTest
   fun name(): String => "wire_protocol/encode_render"
 
   fun apply(h: TestHelper) ? =>
     let encoded = _WireProtocol.encode_render("<h1>hello</h1>")
-    let obj = match json.JsonParser.parse(encoded)
+    let obj =
+      match json.JsonParser.parse(encoded)
       | let o: json.JsonObject => o
       else h.fail("expected JsonObject"); error
       end
@@ -244,7 +245,8 @@ class \nodoc\ _TestEncodeHeartbeatAck is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let encoded = _WireProtocol.encode_heartbeat_ack()
-    let obj = match json.JsonParser.parse(encoded)
+    let obj =
+      match json.JsonParser.parse(encoded)
       | let o: json.JsonObject => o
       else h.fail("expected JsonObject"); error
       end
@@ -259,7 +261,8 @@ class \nodoc\ _TestEncodePushEvent is UnitTest
   fun apply(h: TestHelper) ? =>
     let payload = json.JsonObject.update("key", "value")
     let encoded = _WireProtocol.encode_push_event("notify", payload)
-    let obj = match json.JsonParser.parse(encoded)
+    let obj =
+      match json.JsonParser.parse(encoded)
       | let o: json.JsonObject => o
       else h.fail("expected JsonObject"); error
       end
@@ -277,7 +280,8 @@ class \nodoc\ _TestEncodeError is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let encoded = _WireProtocol.encode_error("render_failed")
-    let obj = match json.JsonParser.parse(encoded)
+    let obj =
+      match json.JsonParser.parse(encoded)
       | let o: json.JsonObject => o
       else h.fail("expected JsonObject"); error
       end
@@ -291,7 +295,6 @@ class \nodoc\ _TestEncodeError is UnitTest
     end
 
 // --- Wire protocol decode tests ---
-
 class \nodoc\ _TestDecodeEvent is UnitTest
   fun name(): String => "wire_protocol/decode_event"
 
@@ -336,7 +339,7 @@ class \nodoc\ _TestDecodeHeartbeat is UnitTest
       h.fail("expected _HeartbeatMessage")
     end
 
-class \nodoc\ _TestDecodeInvalidJson is UnitTest
+class \nodoc\ _TestDecodeInvalidJSON is UnitTest
   fun name(): String => "wire_protocol/decode_invalid_json"
 
   fun apply(h: TestHelper) =>
@@ -378,15 +381,14 @@ class \nodoc\ _TestDecodeUnknownType is UnitTest
     end
 
 // --- Router tests ---
-
 class \nodoc\ _TestRouterExactMatch is UnitTest
   fun name(): String => "router/exact_match"
 
   fun apply(h: TestHelper) ? =>
     let router = Router
-    router.route("/test", {(): LiveView ref^ => _DummyView} val)
+    router.route("/test", {(): LiveView ref^ => _DummyView } val)
     let routes = router.build()
-    match routes("/test")
+    match \exhaustive\ routes("/test")
     | let f: Factory => f()?
     | None => h.fail("expected factory, got None"); error
     end
@@ -396,9 +398,9 @@ class \nodoc\ _TestRouterNoMatch is UnitTest
 
   fun apply(h: TestHelper) =>
     let router = Router
-    router.route("/test", {(): LiveView ref^ => _DummyView} val)
+    router.route("/test", {(): LiveView ref^ => _DummyView } val)
     let routes = router.build()
-    match routes("/other")
+    match \exhaustive\ routes("/other")
     | let _: Factory => h.fail("expected None, got factory")
     | None => None
     end
@@ -409,7 +411,7 @@ class \nodoc\ _TestRouterEmpty is UnitTest
   fun apply(h: TestHelper) =>
     let router = Router
     let routes = router.build()
-    match routes("/anything")
+    match \exhaustive\ routes("/anything")
     | let _: Factory => h.fail("expected None from empty router")
     | None => None
     end
@@ -419,15 +421,14 @@ class \nodoc\ _TestRouterQueryStrip is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let router = Router
-    router.route("/path", {(): LiveView ref^ => _DummyView} val)
+    router.route("/path", {(): LiveView ref^ => _DummyView } val)
     let routes = router.build()
-    match routes("/path?foo=bar&baz=1")
+    match \exhaustive\ routes("/path?foo=bar&baz=1")
     | let f: Factory => f()?
     | None => h.fail("expected factory after query strip"); error
     end
 
 // --- Socket tests ---
-
 class \nodoc\ _TestSocketPushEvent is UnitTest
   fun name(): String => "socket/push_event"
 
@@ -435,8 +436,9 @@ class \nodoc\ _TestSocketPushEvent is UnitTest
     let assigns = Assigns
     let pending = Array[(String val, json.JsonValue)]
     let components = _ComponentRegistry(pending)
-    let socket = Socket(assigns, pending, _DummyInfoReceiver, PubSub,
-      components)
+    let socket =
+      Socket(
+        assigns, pending, _DummyInfoReceiver, PubSub, components)
     socket.push_event("test_event", "payload_value")
 
     h.assert_eq[USize](1, pending.size())
@@ -444,29 +446,28 @@ class \nodoc\ _TestSocketPushEvent is UnitTest
     h.assert_eq[String val]("test_event", event)
 
 // --- PubSub tests ---
-
 class \nodoc\ _TestPubSubDeliver is UnitTest
   fun name(): String => "pub_sub/deliver"
 
   fun apply(h: TestHelper) =>
     h.long_test(2_000_000_000)
     let receiver = _TestInfoReceiver(h)
-    let pub_sub = PubSub
-    pub_sub.subscribe("topic", receiver)
-    pub_sub.publish("topic", "hello")
+    PubSub
+      .> subscribe("topic", receiver)
+      .> publish("topic", "hello")
 
 class \nodoc\ _TestPubSubNoSubscribers is UnitTest
   fun name(): String => "pub_sub/no_subscribers"
 
   fun apply(h: TestHelper) =>
     h.long_test(2_000_000_000)
-    let pub_sub = PubSub
-    // Publishing to an empty topic should not crash
-    pub_sub.publish("empty_topic", "hello")
-    // Use a sentinel to prove the publish was processed
+    // Publishing to an empty topic should not crash.
+    // Use a sentinel to prove the publish was processed.
     let receiver = _TestInfoReceiver(h)
-    pub_sub.subscribe("proof", receiver)
-    pub_sub.publish("proof", "done")
+    PubSub
+      .> publish("empty_topic", "hello")
+      .> subscribe("proof", receiver)
+      .> publish("proof", "done")
 
 class \nodoc\ _TestPubSubUnsubscribe is UnitTest
   fun name(): String => "pub_sub/unsubscribe"
@@ -475,11 +476,11 @@ class \nodoc\ _TestPubSubUnsubscribe is UnitTest
     h.long_test(2_000_000_000)
     let guarded = _GuardedInfoReceiver
     let sentinel = _SentinelInfoReceiver(h, guarded)
-    let pub_sub = PubSub
-    pub_sub.subscribe("topic", guarded)
-    pub_sub.subscribe("topic", sentinel)
-    pub_sub.unsubscribe("topic", guarded)
-    pub_sub.publish("topic", "after_unsub")
+    PubSub
+      .> subscribe("topic", guarded)
+      .> subscribe("topic", sentinel)
+      .> unsubscribe("topic", guarded)
+      .> publish("topic", "after_unsub")
 
 class \nodoc\ _TestPubSubUnsubscribeAll is UnitTest
   fun name(): String => "pub_sub/unsubscribe_all"
@@ -488,12 +489,12 @@ class \nodoc\ _TestPubSubUnsubscribeAll is UnitTest
     h.long_test(2_000_000_000)
     let guarded = _GuardedInfoReceiver
     let sentinel = _SentinelInfoReceiver(h, guarded)
-    let pub_sub = PubSub
-    pub_sub.subscribe("topic_a", guarded)
-    pub_sub.subscribe("topic_b", guarded)
-    pub_sub.subscribe("topic_a", sentinel)
-    pub_sub.unsubscribe_all(guarded)
-    pub_sub.publish("topic_a", "after_unsub_all")
+    PubSub
+      .> subscribe("topic_a", guarded)
+      .> subscribe("topic_b", guarded)
+      .> subscribe("topic_a", sentinel)
+      .> unsubscribe_all(guarded)
+      .> publish("topic_a", "after_unsub_all")
 
 class \nodoc\ _TestPubSubMultipleSubscribers is UnitTest
   fun name(): String => "pub_sub/multiple_subscribers"
@@ -543,7 +544,6 @@ actor \nodoc\ _ForwardingInfoReceiver is InfoReceiver
     _counter.received()
 
 // --- Socket connected tests ---
-
 class \nodoc\ _TestSocketConnectedTrue is UnitTest
   fun name(): String => "socket/connected_true"
 
@@ -551,9 +551,11 @@ class \nodoc\ _TestSocketConnectedTrue is UnitTest
     let assigns = Assigns
     let pending = Array[(String val, json.JsonValue)]
     let components = _ComponentRegistry(pending)
-    let socket = Socket(assigns, pending, _DummyInfoReceiver, PubSub,
-      components)
-    h.assert_true(socket.connected(),
+    let socket =
+      Socket(
+        assigns, pending, _DummyInfoReceiver, PubSub, components)
+    h.assert_true(
+      socket.connected(),
       "socket created via create should be connected")
 
 class \nodoc\ _TestSocketConnectedFalse is UnitTest
@@ -563,7 +565,8 @@ class \nodoc\ _TestSocketConnectedFalse is UnitTest
     let assigns = Assigns
     let pending = Array[(String val, json.JsonValue)]
     let socket = Socket._for_render(assigns, pending)
-    h.assert_false(socket.connected(),
+    h.assert_false(
+      socket.connected(),
       "socket created via _for_render should not be connected")
 
 class \nodoc\ _TestSocketDisconnectedSubscribeNoop is UnitTest
@@ -572,19 +575,21 @@ class \nodoc\ _TestSocketDisconnectedSubscribeNoop is UnitTest
   fun apply(h: TestHelper) =>
     let assigns = Assigns
     let pending = Array[(String val, json.JsonValue)]
-    let socket = Socket._for_render(assigns, pending)
     // These should not crash — they no-op when PubSub is None
-    socket.subscribe("topic")
-    socket.unsubscribe("topic")
+    Socket._for_render(assigns, pending)
+      .> subscribe("topic")
+      .> unsubscribe("topic")
 
 // --- PageRenderer tests ---
-
 class \nodoc\ _RenderTestView is LiveView
   new create() => None
+
   fun ref mount(socket: Socket ref) =>
     socket.assign("greeting", "hello")
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: Socket ref)
   =>
     None
@@ -600,7 +605,9 @@ class \nodoc\ _FailRenderView is LiveView
   new create() => None
   fun ref mount(socket: Socket ref) => None
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: Socket ref)
   =>
     None
@@ -613,8 +620,8 @@ class \nodoc\ _TestPageRendererSuccess is UnitTest
 
   fun apply(h: TestHelper) =>
     let factory: Factory =
-      {(): LiveView ref^ => _RenderTestView} val
-    match PageRenderer.render(factory)
+      {(): LiveView ref^ => _RenderTestView } val
+    match \exhaustive\ PageRenderer.render(factory)
     | let html: String val =>
       h.assert_eq[String]("hello", html)
     | let err: PageRenderError =>
@@ -626,8 +633,8 @@ class \nodoc\ _TestPageRendererFactoryFailed is UnitTest
 
   fun apply(h: TestHelper) =>
     let factory: Factory =
-      {(): LiveView ref^ ? => error} val
-    match PageRenderer.render(factory)
+      {(): LiveView ref^ ? => error } val
+    match \exhaustive\ PageRenderer.render(factory)
     | let _: String val =>
       h.fail("expected PageRenderFactoryFailed, got HTML")
     | let _: PageRenderFactoryFailed => None
@@ -640,8 +647,8 @@ class \nodoc\ _TestPageRendererRenderFailed is UnitTest
 
   fun apply(h: TestHelper) =>
     let factory: Factory =
-      {(): LiveView ref^ => _FailRenderView} val
-    match PageRenderer.render(factory)
+      {(): LiveView ref^ => _FailRenderView } val
+    match \exhaustive\ PageRenderer.render(factory)
     | let _: String val =>
       h.fail("expected PageRenderFailed, got HTML")
     | let _: PageRenderFactoryFailed =>
@@ -659,7 +666,9 @@ class \nodoc\ _ConnectedBranchView is LiveView
       socket.assign("mode", "static")
     end
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: Socket ref)
   =>
     None
@@ -676,8 +685,8 @@ class \nodoc\ _TestPageRendererDisconnectedSocket is UnitTest
 
   fun apply(h: TestHelper) =>
     let factory: Factory =
-      {(): LiveView ref^ => _ConnectedBranchView} val
-    match PageRenderer.render(factory)
+      {(): LiveView ref^ => _ConnectedBranchView } val
+    match \exhaustive\ PageRenderer.render(factory)
     | let html: String val =>
       h.assert_eq[String]("static", html)
     | let err: PageRenderError =>
@@ -693,15 +702,17 @@ class \nodoc\ _ComponentView is LiveView
   fun ref mount(socket: Socket ref) =>
     let comp = _TestComponent
     if socket.register_component("c1", comp) then
-      socket.update_component("c1",
+      socket.update_component(
+        "c1",
         recover val
-          let d = Array[(String, (String | templates.TemplateValue))]
-          d.push(("greeting", "from_component"))
-          d
+          Array[(String, (String | templates.TemplateValue))]
+            .> push(("greeting", "from_component"))
         end)
     end
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: Socket ref)
   =>
     None
@@ -714,8 +725,8 @@ class \nodoc\ _TestPageRendererWithComponents is UnitTest
 
   fun apply(h: TestHelper) =>
     let factory: Factory =
-      {(): LiveView ref^ => _ComponentView} val
-    match PageRenderer.render(factory)
+      {(): LiveView ref^ => _ComponentView } val
+    match \exhaustive\ PageRenderer.render(factory)
     | let html: String val =>
       h.assert_eq[String]("from_component", html)
     | let err: PageRenderError =>
@@ -723,7 +734,6 @@ class \nodoc\ _TestPageRendererWithComponents is UnitTest
     end
 
 // --- Socket + PubSub integration tests ---
-
 class \nodoc\ _TestSocketSubscribeDeliver is UnitTest
   fun name(): String => "socket/subscribe_deliver"
 
@@ -739,7 +749,6 @@ class \nodoc\ _TestSocketSubscribeDeliver is UnitTest
     pub_sub.publish("test_topic", "hello")
 
 // --- Component test helpers ---
-
 class \nodoc\ _TestComponent is LiveComponent
   """
   Minimal test component that renders a greeting from its assigns.
@@ -751,7 +760,9 @@ class \nodoc\ _TestComponent is LiveComponent
   fun ref mount(socket: ComponentSocket ref) =>
     mount_called = true
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: ComponentSocket ref)
   =>
     match event
@@ -778,7 +789,9 @@ class \nodoc\ _FailingComponent is LiveComponent
 
   fun ref mount(socket: ComponentSocket ref) => None
 
-  fun ref handle_event(event: String val, payload: json.JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: json.JsonValue,
     socket: ComponentSocket ref)
   =>
     None
@@ -787,7 +800,6 @@ class \nodoc\ _FailingComponent is LiveComponent
     error
 
 // --- ComponentSocket tests ---
-
 class \nodoc\ _TestComponentSocketAssignRoundtrip is UnitTest
   fun name(): String => "component_socket/assign_roundtrip"
 
@@ -813,7 +825,6 @@ class \nodoc\ _TestComponentSocketPushEvent is UnitTest
     h.assert_eq[String val]("notify", event)
 
 // --- Component registry tests ---
-
 class \nodoc\ _TestRegistryRegisterAndLookup is UnitTest
   fun name(): String => "registry/register_and_lookup"
 
@@ -825,7 +836,8 @@ class \nodoc\ _TestRegistryRegisterAndLookup is UnitTest
     h.assert_true(registry.register("c1", component))
     h.assert_true(registry.has("c1"))
     h.assert_eq[USize](1, registry.size())
-    h.assert_true(component.mount_called,
+    h.assert_true(
+      component.mount_called,
       "mount should be called during registration")
 
 class \nodoc\ _TestRegistryMaxComponents is UnitTest
@@ -836,7 +848,8 @@ class \nodoc\ _TestRegistryMaxComponents is UnitTest
     let registry = _ComponentRegistry(pending where max_components = 2)
     h.assert_true(registry.register("c1", _TestComponent))
     h.assert_true(registry.register("c2", _TestComponent))
-    h.assert_false(registry.register("c3", _TestComponent),
+    h.assert_false(
+      registry.register("c3", _TestComponent),
       "should reject registration at capacity")
     h.assert_eq[USize](2, registry.size())
 
@@ -875,7 +888,8 @@ class \nodoc\ _TestRegistryDuplicateIdAtCapacity is UnitTest
     let registry = _ComponentRegistry(pending where max_components = 1)
     registry.register("c1", _TestComponent)
     // Re-registering existing ID at capacity should succeed (replacement)
-    h.assert_true(registry.register("c1", _TestComponent),
+    h.assert_true(
+      registry.register("c1", _TestComponent),
       "replacing existing ID at capacity should succeed")
     h.assert_eq[USize](1, registry.size())
 
@@ -887,11 +901,11 @@ class \nodoc\ _TestRegistryRegisterAfterUnregister is UnitTest
     let registry = _ComponentRegistry(pending where max_components = 1)
     registry.register("c1", _TestComponent)
     registry.unregister("c1")
-    h.assert_true(registry.register("c2", _TestComponent),
+    h.assert_true(
+      registry.register("c2", _TestComponent),
       "slot should be freed after unregister")
 
 // --- Component event routing tests ---
-
 class \nodoc\ _TestRegistryHandleEventFound is UnitTest
   fun name(): String => "registry/handle_event_found"
 
@@ -911,7 +925,6 @@ class \nodoc\ _TestRegistryHandleEventNotFound is UnitTest
     h.assert_false(registry.handle_event("nonexistent", "click", None))
 
 // --- Component rendering tests ---
-
 class \nodoc\ _TestRegistryRenderChanged is UnitTest
   fun name(): String => "registry/render_changed"
 
@@ -924,9 +937,8 @@ class \nodoc\ _TestRegistryRenderChanged is UnitTest
     // Update assigns to trigger change
     let data: Array[(String, (String | templates.TemplateValue))] val =
       recover val
-        let d = Array[(String, (String | templates.TemplateValue))]
-        d.push(("greeting", "hello"))
-        d
+        Array[(String, (String | templates.TemplateValue))]
+          .> push(("greeting", "hello"))
       end
     registry.update("c1", data)
 
@@ -946,9 +958,8 @@ class \nodoc\ _TestRegistryRenderUnchangedCached is UnitTest
     // Set greeting and render
     let data: Array[(String, (String | templates.TemplateValue))] val =
       recover val
-        let d = Array[(String, (String | templates.TemplateValue))]
-        d.push(("greeting", "cached"))
-        d
+        Array[(String, (String | templates.TemplateValue))]
+          .> push(("greeting", "cached"))
       end
     registry.update("c1", data)
     registry.render_all()
@@ -968,13 +979,15 @@ class \nodoc\ _TestRegistryRenderFailure is UnitTest
     let registry = _ComponentRegistry(pending)
     registry.register("fail", _FailingComponent)
     let errors = registry.flush_render_errors()
-    h.assert_eq[USize](1, errors.size(),
+    h.assert_eq[USize](
+      1,
+      errors.size(),
       "initial render failure should produce an error")
     try
       h.assert_true(errors(0)?.contains("fail"))
     end
 
-class \nodoc\ _TestRegistryPopulateComponentHtml is UnitTest
+class \nodoc\ _TestRegistryPopulateComponentHTML is UnitTest
   fun name(): String => "registry/populate_component_html"
 
   fun apply(h: TestHelper) ? =>
@@ -984,9 +997,8 @@ class \nodoc\ _TestRegistryPopulateComponentHtml is UnitTest
 
     let data: Array[(String, (String | templates.TemplateValue))] val =
       recover val
-        let d = Array[(String, (String | templates.TemplateValue))]
-        d.push(("greeting", "world"))
-        d
+        Array[(String, (String | templates.TemplateValue))]
+          .> push(("greeting", "world"))
       end
     registry.update("c1", data)
     registry.render_all()
@@ -997,7 +1009,6 @@ class \nodoc\ _TestRegistryPopulateComponentHtml is UnitTest
     h.assert_eq[String]("world", html)
 
 // --- Wire protocol component target tests ---
-
 class \nodoc\ _TestDecodeEventWithTarget is UnitTest
   fun name(): String => "wire_protocol/decode_event_with_target"
 
@@ -1012,7 +1023,7 @@ class \nodoc\ _TestDecodeEventWithTarget is UnitTest
     match _WireProtocol.decode_client_message(consume data)
     | let msg: _EventMessage =>
       h.assert_eq[String]("toggle", msg.event)
-      match msg.target
+      match \exhaustive\ msg.target
       | let t: String => h.assert_eq[String]("todo-3", t)
       | None => h.fail("expected target, got None")
       end
@@ -1033,7 +1044,7 @@ class \nodoc\ _TestDecodeEventWithoutTarget is UnitTest
     match _WireProtocol.decode_client_message(consume data)
     | let msg: _EventMessage =>
       h.assert_eq[String]("click", msg.event)
-      match msg.target
+      match \exhaustive\ msg.target
       | let _: String => h.fail("expected None target")
       | None => None
       end
@@ -1054,15 +1065,15 @@ class \nodoc\ _TestDecodeEventNonStringTarget is UnitTest
 
     match _WireProtocol.decode_client_message(consume data)
     | let err: _WireError =>
-      h.assert_true(err.reason.contains("'c'"),
+      h.assert_true(
+        err.reason.contains("'c'"),
         "error should mention 'c' field")
     else
       h.fail("expected _WireError for non-string 'c'")
     end
 
 // --- Assigns component HTML tests ---
-
-class \nodoc\ _TestAssignsComponentHtml is UnitTest
+class \nodoc\ _TestAssignsComponentHTML is UnitTest
   fun name(): String => "assigns/component_html"
 
   fun apply(h: TestHelper) ? =>
@@ -1071,12 +1082,13 @@ class \nodoc\ _TestAssignsComponentHtml is UnitTest
     let html = assigns.component_html("c1")?
     h.assert_eq[String]("<li>item</li>", html)
 
-class \nodoc\ _TestAssignsComponentHtmlUnknown is UnitTest
+class \nodoc\ _TestAssignsComponentHTMLUnknown is UnitTest
   fun name(): String => "assigns/component_html_unknown"
 
   fun apply(h: TestHelper) =>
     let assigns = Assigns
-    let found = try
+    let found =
+      try
         assigns.component_html("nonexistent")?
         true
       else
@@ -1084,14 +1096,15 @@ class \nodoc\ _TestAssignsComponentHtmlUnknown is UnitTest
       end
     h.assert_false(found, "should error for unknown component ID")
 
-class \nodoc\ _TestAssignsClearComponentHtml is UnitTest
+class \nodoc\ _TestAssignsClearComponentHTML is UnitTest
   fun name(): String => "assigns/clear_component_html"
 
   fun apply(h: TestHelper) =>
     let assigns = Assigns
     assigns._set_component_html("c1", "<li>item</li>")
     assigns._clear_component_html()
-    let found = try
+    let found =
+      try
         assigns.component_html("c1")?
         true
       else
@@ -1099,7 +1112,7 @@ class \nodoc\ _TestAssignsClearComponentHtml is UnitTest
       end
     h.assert_false(found, "should be empty after clear")
 
-class \nodoc\ _TestAssignsComponentHtmlSeparateNamespace is UnitTest
+class \nodoc\ _TestAssignsComponentHTMLSeparateNamespace is UnitTest
   fun name(): String => "assigns/component_html_separate_namespace"
 
   fun apply(h: TestHelper) ? =>
@@ -1128,16 +1141,16 @@ class \nodoc\ _TestAssignsRenderValues is UnitTest
     h.assert_eq[String]("world", child_val)
 
 // --- Security tests ---
-
 class \nodoc\ _TestRegistryEmptyStringTarget is UnitTest
   fun name(): String => "registry/empty_string_target"
 
   fun apply(h: TestHelper) =>
     let pending = Array[(String val, json.JsonValue)]
     let registry = _ComponentRegistry(pending)
-    h.assert_false(registry.handle_event("", "click", None),
-      "empty string target should fail when no component registered with " +
-      "that ID")
+    h.assert_false(
+      registry.handle_event("", "click", None),
+      "empty string target should fail when no component " +
+        "registered with that ID")
 
 class \nodoc\ _TestRegistryLongTarget is UnitTest
   fun name(): String => "registry/long_target"
@@ -1145,10 +1158,12 @@ class \nodoc\ _TestRegistryLongTarget is UnitTest
   fun apply(h: TestHelper) =>
     let pending = Array[(String val, json.JsonValue)]
     let registry = _ComponentRegistry(pending)
-    let long_id = recover val
-      String(10000).>append("a" * 10000)
-    end
-    h.assert_false(registry.handle_event(long_id, "click", None),
+    let long_id =
+      recover val
+        String(10000) .> append("a" * 10000)
+      end
+    h.assert_false(
+      registry.handle_event(long_id, "click", None),
       "very long target should fail without crashing")
 
 class \nodoc\ _TestComponentIsolation is UnitTest
@@ -1162,17 +1177,15 @@ class \nodoc\ _TestComponentIsolation is UnitTest
 
     let data_a: Array[(String, (String | templates.TemplateValue))] val =
       recover val
-        let d = Array[(String, (String | templates.TemplateValue))]
-        d.push(("greeting", "alpha"))
-        d
+        Array[(String, (String | templates.TemplateValue))]
+          .> push(("greeting", "alpha"))
       end
     registry.update("a", data_a)
 
     let data_b: Array[(String, (String | templates.TemplateValue))] val =
       recover val
-        let d = Array[(String, (String | templates.TemplateValue))]
-        d.push(("greeting", "beta"))
-        d
+        Array[(String, (String | templates.TemplateValue))]
+          .> push(("greeting", "beta"))
       end
     registry.update("b", data_b)
 
@@ -1181,7 +1194,6 @@ class \nodoc\ _TestComponentIsolation is UnitTest
     h.assert_eq[String]("beta", registry.component_html("b")?)
 
 // --- RenderSink roundtrip tests ---
-
 class \nodoc\ _TestRenderSinkRoundtrip is Property1[String]
   """
   render_to(sink) -> full_html() matches HtmlTemplate.render() for a
@@ -1221,8 +1233,9 @@ class \nodoc\ _TestRenderSinkRoundtripMultiVar is
 
   fun property(sample: (String, String, String), h: PropertyHelper) ? =>
     (let a, let b, let c) = sample
-    let tmpl = templates.HtmlTemplate.parse(
-      "<p>{{ x }}</p><p>{{ y }}</p><p>{{ z }}</p>")?
+    let tmpl =
+      templates.HtmlTemplate.parse(
+        "<p>{{ x }}</p><p>{{ y }}</p><p>{{ z }}</p>")?
     let tv = templates.TemplateValues
     tv("x") = a
     tv("y") = b
@@ -1244,8 +1257,9 @@ class \nodoc\ _TestRenderSinkIfCollapse is UnitTest
   fun name(): String => "render_sink/if_collapse"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse(
-      "<div>{{ if show }}visible{{ end }}</div>")?
+    let tmpl =
+      templates.HtmlTemplate.parse(
+        "<div>{{ if show }}visible{{ end }}</div>")?
     let tv = templates.TemplateValues
     tv("show") = "true"
 
@@ -1302,40 +1316,43 @@ class \nodoc\ _TestRenderSinkInterleave is Property1[USize]
 
   fun property(n: USize, h: PropertyHelper) ? =>
     // Build deterministic statics and dynamics based on n
-    let statics = recover val
-      let arr = Array[String](n + 1)
-      var i: USize = 0
-      while i < (n + 1) do
-        arr.push("s" + i.string())
-        i = i + 1
+    let statics =
+      recover val
+        let arr = Array[String](n + 1)
+        var i: USize = 0
+        while i < (n + 1) do
+          arr.push("s" + i.string())
+          i = i + 1
+        end
+        arr
       end
-      arr
-    end
-    let dynamics = recover val
-      let arr = Array[String](n)
-      var i: USize = 0
-      while i < n do
-        arr.push("d" + i.string())
-        i = i + 1
+    let dynamics =
+      recover val
+        let arr = Array[String](n)
+        var i: USize = 0
+        while i < n do
+          arr.push("d" + i.string())
+          i = i + 1
+        end
+        arr
       end
-      arr
-    end
 
     // Build expected string manually
-    let expected = recover val
-      var total: USize = 0
-      for s in statics.values() do total = total + s.size() end
-      for d in dynamics.values() do total = total + d.size() end
-      let out = String(total)
-      var i: USize = 0
-      while i < dynamics.size() do
+    let expected =
+      recover val
+        var total: USize = 0
+        for s in statics.values() do total = total + s.size() end
+        for d in dynamics.values() do total = total + d.size() end
+        let out = String(total)
+        var i: USize = 0
+        while i < dynamics.size() do
+          out.append(statics(i)?)
+          out.append(dynamics(i)?)
+          i = i + 1
+        end
         out.append(statics(i)?)
-        out.append(dynamics(i)?)
-        i = i + 1
+        out
       end
-      out.append(statics(i)?)
-      out
-    end
 
     // Drive the sink manually
     let sink: _RenderSink ref = _RenderSink
@@ -1363,8 +1380,9 @@ class \nodoc\ _TestRenderSinkDynamicsCountChange is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let tmpl1 = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
-    let tmpl2 = templates.HtmlTemplate.parse(
-      "<p>{{ a }}</p><p>{{ b }}</p>")?
+    let tmpl2 =
+      templates.HtmlTemplate.parse(
+        "<p>{{ a }}</p><p>{{ b }}</p>")?
     let tv = templates.TemplateValues
     tv("x") = "one"
     tv("a") = "two"
@@ -1407,7 +1425,6 @@ class \nodoc\ _TestRenderSinkEscapingRoundtrip is UnitTest
     h.assert_eq[String](expected, sink.full_html())
 
 // --- RenderSink diff tests ---
-
 class \nodoc\ _TestRenderSinkFirstRender is UnitTest
   """
   First result() returns _FullRender.
@@ -1466,8 +1483,9 @@ class \nodoc\ _TestRenderSinkPartialDiff is UnitTest
   fun name(): String => "render_sink/partial_diff"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse(
-      "<p>{{ a }}</p><p>{{ b }}</p><p>{{ c }}</p>")?
+    let tmpl =
+      templates.HtmlTemplate.parse(
+        "<p>{{ a }}</p><p>{{ b }}</p><p>{{ c }}</p>")?
     let tv = templates.TemplateValues
     tv("a") = "1"
     tv("b") = "2"
@@ -1499,8 +1517,9 @@ class \nodoc\ _TestRenderSinkAllSlotsDiff is UnitTest
   fun name(): String => "render_sink/all_slots_diff"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse(
-      "<p>{{ a }}</p><p>{{ b }}</p>")?
+    let tmpl =
+      templates.HtmlTemplate.parse(
+        "<p>{{ a }}</p><p>{{ b }}</p>")?
     let tv = templates.TemplateValues
     tv("a") = "1"
     tv("b") = "2"
@@ -1629,15 +1648,16 @@ class \nodoc\ _TestRenderSinkDiffProperty is Property1[(USize, Bool)]
   fun property(sample: (USize, Bool), h: PropertyHelper) =>
     (let n, let do_changes) = sample
     // Build a template with N slots
-    let tmpl_str = recover val
-      let s = String
-      var i: USize = 0
-      while i < n do
-        s.append("{{ v" + i.string() + " }}")
-        i = i + 1
+    let tmpl_str =
+      recover val
+        let s = String
+        var i: USize = 0
+        while i < n do
+          s.append("{{ v" + i.string() + " }}")
+          i = i + 1
+        end
+        s
       end
-      s
-    end
 
     try
       let tmpl = templates.HtmlTemplate.parse(tmpl_str)?
@@ -1672,7 +1692,7 @@ class \nodoc\ _TestRenderSinkDiffProperty is Property1[(USize, Bool)]
       tmpl.render_to(sink, tv)?
       let diff = sink.result()
 
-      match diff
+      match \exhaustive\ diff
       | let slot_diff: _SlotDiff =>
         h.assert_eq[USize](expected_changes.size(), slot_diff.changes.size())
         var j: USize = 0
@@ -1688,7 +1708,9 @@ class \nodoc\ _TestRenderSinkDiffProperty is Property1[(USize, Bool)]
           j = j + 1
         end
       | _NoChange =>
-        h.assert_eq[USize](0, expected_changes.size(),
+        h.assert_eq[USize](
+          0,
+          expected_changes.size(),
           "got _NoChange but expected changes")
       | let _: _FullRender =>
         // The generator never changes statics between renders, so this arm
@@ -1744,7 +1766,7 @@ class \nodoc\ _TestRenderSinkFallbackPattern is UnitTest
       h.fail("expected _FullRender after empty abandon + fresh render")
     end
 
-class \nodoc\ _TestRenderSinkFullHtmlBeforeRender is UnitTest
+class \nodoc\ _TestRenderSinkFullHTMLBeforeRender is UnitTest
   """
   full_html() on a fresh sink (no render transaction) returns empty string.
   """
@@ -1755,7 +1777,6 @@ class \nodoc\ _TestRenderSinkFullHtmlBeforeRender is UnitTest
     h.assert_eq[String]("", sink.full_html())
 
 // --- Wire protocol split render tests ---
-
 class \nodoc\ _TestEncodeRenderFull is UnitTest
   fun name(): String => "wire_protocol/encode_render_full"
 
@@ -1763,7 +1784,8 @@ class \nodoc\ _TestEncodeRenderFull is UnitTest
     let statics: Array[String] val = ["<div>"; "</div>"]
     let dynamics: Array[String] val = ["42"]
     let encoded = _WireProtocol.encode_render_full(statics, dynamics)
-    let obj = match json.JsonParser.parse(encoded)
+    let obj =
+      match json.JsonParser.parse(encoded)
       | let o: json.JsonObject => o
       else h.fail("expected JsonObject"); error
       end
@@ -1800,7 +1822,8 @@ class \nodoc\ _TestEncodeRenderDiff is UnitTest
   fun apply(h: TestHelper) ? =>
     let changes: Array[(USize, String)] val = [(0, "43"); (2, "new")]
     let encoded = _WireProtocol.encode_render_diff(changes)
-    let obj = match json.JsonParser.parse(encoded)
+    let obj =
+      match json.JsonParser.parse(encoded)
       | let o: json.JsonObject => o
       else h.fail("expected JsonObject"); error
       end
@@ -1828,7 +1851,8 @@ class \nodoc\ _TestEncodeRenderDiffEmpty is UnitTest
     let changes: Array[(USize, String)] val =
       recover val Array[(USize, String)] end
     let encoded = _WireProtocol.encode_render_diff(changes)
-    let obj = match json.JsonParser.parse(encoded)
+    let obj =
+      match json.JsonParser.parse(encoded)
       | let o: json.JsonObject => o
       else h.fail("expected JsonObject"); error
       end
@@ -1843,7 +1867,6 @@ class \nodoc\ _TestEncodeRenderDiffEmpty is UnitTest
     end
 
 // --- LiveView default render_parts test ---
-
 class \nodoc\ _TestLiveViewRenderPartsDefault is UnitTest
   fun name(): String => "live_view/render_parts_default"
 
@@ -1851,5 +1874,6 @@ class \nodoc\ _TestLiveViewRenderPartsDefault is UnitTest
     let view: LiveView ref = _DummyView
     let sink: _RenderSink ref = _RenderSink
     let assigns = Assigns
-    h.assert_false(view.render_parts(assigns, sink),
+    h.assert_false(
+      view.render_parts(assigns, sink),
       "default render_parts should return false")

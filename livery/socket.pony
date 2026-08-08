@@ -16,9 +16,11 @@ class Socket
   let _connected: Bool
   let _components: _ComponentRegistry ref
 
-  new create(assigns: Assigns ref,
+  new create(
+    assigns: Assigns ref,
     pending_events: Array[(String val, json.JsonValue)] ref,
-    self': InfoReceiver tag, pub_sub: PubSub tag,
+    self': InfoReceiver tag,
+    pub_sub: PubSub tag,
     components: _ComponentRegistry ref)
   =>
     _assigns = assigns

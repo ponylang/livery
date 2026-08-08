@@ -4,11 +4,15 @@ use lori = "lori"
 use "../../livery"
 
 class CounterView is LiveView
+  """
+  A LiveView that displays a counter with increment/decrement buttons.
+  """
   let _template: HtmlTemplate val
 
   new create() ? =>
-    _template = HtmlTemplate.parse(
-      """
+    _template =
+      HtmlTemplate.parse(
+        """
       <div>
         <h1>Count: {{ count }}</h1>
         <button lv-click="increment">+</button>
@@ -19,12 +23,15 @@ class CounterView is LiveView
   fun ref mount(socket: Socket ref) =>
     socket.assign("count", "0")
 
-  fun ref handle_event(event: String val, payload: JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: JsonValue,
     socket: Socket ref)
   =>
     try
       let current = socket.get_assign("count")?.string()?.i64()?
-      let next = match event
+      let next =
+        match event
         | "increment" => current + 1
         | "decrement" => current - 1
         else current
@@ -48,8 +55,14 @@ class CounterView is LiveView
 actor Main
   new create(env: Env) =>
     let router = Router
-    router.route("/counter",
-      {(): LiveView ref^ ? => CounterView.create()?} val)
+    router.route(
+      "/counter",
+      {(): LiveView ref^ ? => CounterView.create()? } val)
 
-    Listener(lori.TCPListenAuth(env.root), "0.0.0.0", "8081",
-      router.build(), PubSub, env.err)
+    Listener(
+      lori.TCPListenAuth(env.root),
+      "0.0.0.0",
+      "8081",
+      router.build(),
+      PubSub,
+      env.err)

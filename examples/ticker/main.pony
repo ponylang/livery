@@ -18,8 +18,9 @@ class TickerView is LiveView
   let _template: HtmlTemplate val
 
   new create() ? =>
-    _template = HtmlTemplate.parse(
-      """
+    _template =
+      HtmlTemplate.parse(
+        """
       <div>
         <h1>Ticks: {{ count }}</h1>
         <p>Count updates automatically every second.</p>
@@ -30,7 +31,9 @@ class TickerView is LiveView
     socket.assign("count", "0")
     socket.subscribe("tick")
 
-  fun ref handle_event(event: String val, payload: JsonValue,
+  fun ref handle_event(
+    event: String val,
+    payload: JsonValue,
     socket: Socket ref)
   =>
     None
@@ -87,8 +90,14 @@ actor Main
     Ticker(pub_sub)
 
     let router = Router
-    router.route("/ticker",
-      {(): LiveView ref^ ? => TickerView.create()?} val)
+    router.route(
+      "/ticker",
+      {(): LiveView ref^ ? => TickerView.create()? } val)
 
-    Listener(lori.TCPListenAuth(env.root), "0.0.0.0", "8082",
-      router.build(), pub_sub, env.err)
+    Listener(
+      lori.TCPListenAuth(env.root),
+      "0.0.0.0",
+      "8082",
+      router.build(),
+      pub_sub,
+      env.err)

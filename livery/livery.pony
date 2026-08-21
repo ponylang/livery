@@ -55,13 +55,13 @@ library types are needed. The JavaScript client sends form field data as a
 JSON object payload via `lv-change` (fires on every keystroke for real-time
 validation) and `lv-submit` (fires on form submission).
 
-On the server, extract fields with `JsonNav` and validate:
+On the server, extract fields with `JSONNav` and validate:
 
 ```pony
-fun ref handle_event(event: String val, payload: json.JsonValue,
+fun ref handle_event(event: String val, payload: json.JSONValue,
   socket: Socket ref)
 =>
-  let nav = json.JsonNav(payload)
+  let nav = json.JSONNav(payload)
   try
     let username = nav("username").as_string()?
     let email = nav("email").as_string()?

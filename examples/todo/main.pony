@@ -36,7 +36,7 @@ class TodoItem is LiveComponent
 
   fun ref handle_event(
     event: String val,
-    payload: JsonValue,
+    payload: JSONValue,
     socket: ComponentSocket ref)
   =>
     match event
@@ -91,12 +91,12 @@ class TodoListView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: JsonValue,
+    payload: JSONValue,
     socket: Socket ref)
   =>
     match event
     | "add" =>
-      let nav = JsonNav(payload)
+      let nav = JSONNav(payload)
       try
         let text = nav("text").as_string()?
         if text.size() > 0 then
@@ -119,7 +119,7 @@ class TodoListView is LiveView
         end
       end
     | "delete" =>
-      let nav = JsonNav(payload)
+      let nav = JSONNav(payload)
       try
         let id = nav("id").as_string()?
         socket.unregister_component(id)

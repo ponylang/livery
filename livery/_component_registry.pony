@@ -11,11 +11,11 @@ class _ComponentRegistry
   """
   let _entries: Map[String, _ComponentEntry ref] ref
   let _max_components: USize
-  let _pending_events: Array[(String val, json.JsonValue)] ref
+  let _pending_events: Array[(String val, json.JSONValue)] ref
   var _render_errors: Array[String val] ref
 
   new create(
-    pending_events: Array[(String val, json.JsonValue)] ref,
+    pending_events: Array[(String val, json.JSONValue)] ref,
     max_components: USize = 256)
   =>
     _entries = Map[String, _ComponentEntry ref]
@@ -33,8 +33,8 @@ class _ComponentRegistry
     registered (with empty cached HTML) and a `component_render_failed`
     error is queued. The next render cycle will retry.
     """
-    if (_entries.size() >= _max_components)
-      and (not _entries.contains(id))
+    if (_entries.size() >= _max_components) and
+      (not _entries.contains(id))
     then
       return false
     end
@@ -76,7 +76,7 @@ class _ComponentRegistry
   fun ref handle_event(
     id: String,
     event: String val,
-    payload: json.JsonValue): Bool
+    payload: json.JSONValue): Bool
   =>
     """
     Route an event to a component. Returns false if the component ID

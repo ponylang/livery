@@ -27,7 +27,7 @@ trait LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: Socket ref)
     """
     Called when the client sends a UI event (e.g., a button click or form

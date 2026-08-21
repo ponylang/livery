@@ -37,5 +37,5 @@ actor Listener is lori.TCPListenerActor
     _Connection(_server_auth, fd, _config, _routes, _pub_sub)
 
   fun ref _on_listen_failure() =>
-    _out.print("Listener: failed to bind to " + _config.host + ":"
-      + _config.port)
+    _out.print("Listener: failed to bind to " + _config.host + ":" +
+      _config.port)

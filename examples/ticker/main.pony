@@ -33,7 +33,7 @@ class TickerView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: JsonValue,
+    payload: JSONValue,
     socket: Socket ref)
   =>
     None
@@ -45,7 +45,7 @@ class TickerView is LiveView
     end
     match message
     | let n: U64 =>
-      socket.push_event("tick", JsonObject.update("timer_count", n.i64()))
+      socket.push_event("tick", JSONObject.update("timer_count", n.i64()))
     end
 
   fun box render(assigns: Assigns box): String ? =>

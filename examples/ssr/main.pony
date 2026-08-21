@@ -28,7 +28,7 @@ class CounterView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: JsonValue,
+    payload: JSONValue,
     socket: Socket ref)
   =>
     try
@@ -101,20 +101,20 @@ actor Main is hobby.ServerNotify
       let body =
         match \exhaustive\ PageRenderer.render(factory)
         | let html: String val =>
-          "<!DOCTYPE html>\n"
-            + "<html>\n"
-            + "<head><title>SSR Counter - Livery Example</title></head>\n"
-            + "<body>\n"
-            + "  <div id=\"lv-root\">" + html + "</div>\n"
-            + "  <script src=\"/client/livery.iife.js\"></script>\n"
-            + "  <script>\n"
-            + "    new LiveView({\n"
-            + "      url: \"ws://localhost:8084/ssr\",\n"
-            + "      target: document.getElementById(\"lv-root\")\n"
-            + "    }).connect();\n"
-            + "  </script>\n"
-            + "</body>\n"
-            + "</html>"
+          "<!DOCTYPE html>\n" +
+            "<html>\n" +
+            "<head><title>SSR Counter - Livery Example</title></head>\n" +
+            "<body>\n" +
+            "  <div id=\"lv-root\">" + html + "</div>\n" +
+            "  <script src=\"/client/livery.iife.js\"></script>\n" +
+            "  <script>\n" +
+            "    new LiveView({\n" +
+            "      url: \"ws://localhost:8084/ssr\",\n" +
+            "      target: document.getElementById(\"lv-root\")\n" +
+            "    }).connect();\n" +
+            "  </script>\n" +
+            "</body>\n" +
+            "</html>"
         | let err: PageRenderError =>
           handler.respond(stallion.StatusInternalServerError, err.string())
           return

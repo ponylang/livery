@@ -36,7 +36,7 @@ trait LiveComponent
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: ComponentSocket ref)
     """
     Called when the client sends an event targeted at this component

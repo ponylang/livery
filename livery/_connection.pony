@@ -14,7 +14,7 @@ actor _Connection is mare.WebSocketServerActor
   var _ws: mare.WebSocketServer = mare.WebSocketServer.none()
   var _view: (LiveView ref | None) = None
   let _assigns: Assigns ref
-  let _pending_events: Array[(String val, json.JsonValue)] ref
+  let _pending_events: Array[(String val, json.JSONValue)] ref
   let _socket: Socket ref
   var _last_html: String val = ""
   let _router: Routes val
@@ -30,7 +30,7 @@ actor _Connection is mare.WebSocketServerActor
     pub_sub: PubSub tag)
   =>
     _assigns = Assigns
-    _pending_events = Array[(String val, json.JsonValue)]
+    _pending_events = Array[(String val, json.JSONValue)]
     _pub_sub = pub_sub
     _components = _ComponentRegistry(_pending_events)
     _socket = Socket(_assigns, _pending_events, this, _pub_sub, _components)

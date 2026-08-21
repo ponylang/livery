@@ -10,10 +10,10 @@ class ComponentSocket
   concerns managed by the parent view.
   """
   let _assigns: Assigns ref
-  let _pending_events: Array[(String val, json.JsonValue)] ref
+  let _pending_events: Array[(String val, json.JSONValue)] ref
 
   new create(assigns: Assigns ref,
-    pending_events: Array[(String val, json.JsonValue)] ref)
+    pending_events: Array[(String val, json.JSONValue)] ref)
   =>
     _assigns = assigns
     _pending_events = pending_events
@@ -33,7 +33,7 @@ class ComponentSocket
     """
     _assigns(key)?
 
-  fun ref push_event(event: String val, payload: json.JsonValue) =>
+  fun ref push_event(event: String val, payload: json.JSONValue) =>
     """
     Push a server-initiated event to the client. Events are queued and
     flushed after the current render cycle, same as `Socket.push_event`.

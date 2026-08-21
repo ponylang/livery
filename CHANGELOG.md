@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Changed
 
+- Update to work with Pony 0.69.0 ([PR #71](https://github.com/ponylang/livery/pull/71))
 
 ## [0.7.0] - 2026-08-07
 

@@ -55,10 +55,10 @@ class FormView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: JsonValue,
+    payload: JSONValue,
     socket: Socket ref)
   =>
-    let nav = JsonNav(payload)
+    let nav = JSONNav(payload)
     try
       let username = nav("username").as_string()?
       let email = nav("email").as_string()?
@@ -108,8 +108,8 @@ class FormView is LiveView
         socket.assign("email_error", email_err)
         socket.assign("password_error", password_err)
 
-        if (username_err == "") and (email_err == "")
-          and (password_err == "")
+        if (username_err == "") and (email_err == "") and
+          (password_err == "")
         then
           socket.assign(
             "result",

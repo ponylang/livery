@@ -8,7 +8,7 @@ primitive _WireProtocol
     """
     Encode a rendered HTML update for the client.
     """
-    json.JsonObject
+    json.JSONObject
       .update("t", "render")
       .update("html", html)
       .print()
@@ -20,15 +20,15 @@ primitive _WireProtocol
     Encode a full split render: statics + all dynamics.
     Sent on first render or when the template changes.
     """
-    var s_arr = json.JsonArray
+    var s_arr = json.JSONArray
     for s in statics.values() do
       s_arr = s_arr.push(s)
     end
-    var d_arr = json.JsonArray
+    var d_arr = json.JSONArray
     for d in dynamics.values() do
       d_arr = d_arr.push(d)
     end
-    json.JsonObject
+    json.JSONObject
       .update("t", "render_full")
       .update("s", s_arr)
       .update("d", d_arr)
@@ -41,11 +41,11 @@ primitive _WireProtocol
     Encode a partial update: only changed dynamic slot values.
     String keys for slot indices.
     """
-    var d_obj = json.JsonObject
+    var d_obj = json.JSONObject
     for (idx, value) in changes.values() do
       d_obj = d_obj.update(idx.string(), value)
     end
-    json.JsonObject
+    json.JSONObject
       .update("t", "render_diff")
       .update("d", d_obj)
       .print()
@@ -54,17 +54,17 @@ primitive _WireProtocol
     """
     Encode a heartbeat acknowledgment.
     """
-    json.JsonObject
+    json.JSONObject
       .update("t", "heartbeat_ack")
       .print()
 
-  fun encode_push_event(event: String val, payload: json.JsonValue)
+  fun encode_push_event(event: String val, payload: json.JSONValue)
     : String val
   =>
     """
     Encode a server-pushed event.
     """
-    json.JsonObject
+    json.JSONObject
       .update("t", "push")
       .update("e", event)
       .update("p", payload)
@@ -74,7 +74,7 @@ primitive _WireProtocol
     """
     Encode an error message.
     """
-    json.JsonObject
+    json.JSONObject
       .update("t", "error")
       .update("reason", reason)
       .print()
@@ -86,12 +86,12 @@ primitive _WireProtocol
     Decode a client message from JSON.
     """
     let obj =
-      match json.JsonParser.parse(data)
-      | let o: json.JsonObject => o
+      match json.JSONParser.parse(data)
+      | let o: json.JSONObject => o
       else return _WireError("invalid JSON or not an object")
       end
 
-    let msg_type: json.JsonValue =
+    let msg_type: json.JSONValue =
       try obj("t")?
       else return _WireError("missing 't' field")
       end
@@ -108,15 +108,15 @@ primitive _WireProtocol
       _WireError("'t' field is not a string")
     end
 
-  fun _decode_event(obj: json.JsonObject): (_EventMessage | _WireError) =>
-    let event_name: json.JsonValue =
+  fun _decode_event(obj: json.JSONObject): (_EventMessage | _WireError) =>
+    let event_name: json.JSONValue =
       try obj("e")?
       else return _WireError("event missing 'e' field")
       end
 
     match event_name
     | let e: String =>
-      let p: json.JsonValue = try obj("p")? else None end
+      let p: json.JSONValue = try obj("p")? else None end
       let target: (String val | None) =
         try
           match obj("c")?
@@ -139,12 +139,12 @@ class val _EventMessage
   specific component via the `target` field.
   """
   let event: String val
-  let payload: json.JsonValue
+  let payload: json.JSONValue
   let target: (String val | None)
 
   new val create(
     event': String val,
-    payload': json.JsonValue,
+    payload': json.JSONValue,
     target': (String val | None) = None)
   =>
     event = event'

@@ -41,7 +41,7 @@ primitive PageRenderer
       else return PageRenderFactoryFailed
       end
     let assigns = Assigns
-    let pending_events = Array[(String val, json.JsonValue)]
+    let pending_events = Array[(String val, json.JSONValue)]
     let socket = Socket._for_render(assigns, pending_events)
     view.mount(socket)
     socket._prepare_render()

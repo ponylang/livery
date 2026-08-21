@@ -25,7 +25,7 @@ class CounterView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: JsonValue,
+    payload: JSONValue,
     socket: Socket ref)
   =>
     try

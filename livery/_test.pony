@@ -114,7 +114,7 @@ class \nodoc\ _DummyView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: Socket ref)
   =>
     None
@@ -227,9 +227,9 @@ class \nodoc\ _TestEncodeRender is UnitTest
   fun apply(h: TestHelper) ? =>
     let encoded = _WireProtocol.encode_render("<h1>hello</h1>")
     let obj =
-      match json.JsonParser.parse(encoded)
-      | let o: json.JsonObject => o
-      else h.fail("expected JsonObject"); error
+      match json.JSONParser.parse(encoded)
+      | let o: json.JSONObject => o
+      else h.fail("expected JSONObject"); error
       end
     match obj("t")?
     | let t: String => h.assert_eq[String]("render", t)
@@ -246,9 +246,9 @@ class \nodoc\ _TestEncodeHeartbeatAck is UnitTest
   fun apply(h: TestHelper) ? =>
     let encoded = _WireProtocol.encode_heartbeat_ack()
     let obj =
-      match json.JsonParser.parse(encoded)
-      | let o: json.JsonObject => o
-      else h.fail("expected JsonObject"); error
+      match json.JSONParser.parse(encoded)
+      | let o: json.JSONObject => o
+      else h.fail("expected JSONObject"); error
       end
     match obj("t")?
     | let t: String => h.assert_eq[String]("heartbeat_ack", t)
@@ -259,12 +259,12 @@ class \nodoc\ _TestEncodePushEvent is UnitTest
   fun name(): String => "wire_protocol/encode_push_event"
 
   fun apply(h: TestHelper) ? =>
-    let payload = json.JsonObject.update("key", "value")
+    let payload = json.JSONObject.update("key", "value")
     let encoded = _WireProtocol.encode_push_event("notify", payload)
     let obj =
-      match json.JsonParser.parse(encoded)
-      | let o: json.JsonObject => o
-      else h.fail("expected JsonObject"); error
+      match json.JSONParser.parse(encoded)
+      | let o: json.JSONObject => o
+      else h.fail("expected JSONObject"); error
       end
     match obj("t")?
     | let t: String => h.assert_eq[String]("push", t)
@@ -281,9 +281,9 @@ class \nodoc\ _TestEncodeError is UnitTest
   fun apply(h: TestHelper) ? =>
     let encoded = _WireProtocol.encode_error("render_failed")
     let obj =
-      match json.JsonParser.parse(encoded)
-      | let o: json.JsonObject => o
-      else h.fail("expected JsonObject"); error
+      match json.JSONParser.parse(encoded)
+      | let o: json.JSONObject => o
+      else h.fail("expected JSONObject"); error
       end
     match obj("t")?
     | let t: String => h.assert_eq[String]("error", t)
@@ -299,17 +299,17 @@ class \nodoc\ _TestDecodeEvent is UnitTest
   fun name(): String => "wire_protocol/decode_event"
 
   fun apply(h: TestHelper) =>
-    let data = json.JsonObject
+    let data = json.JSONObject
       .update("t", "event")
       .update("e", "increment")
-      .update("p", json.JsonObject.update("value", "5"))
+      .update("p", json.JSONObject.update("value", "5"))
       .print()
 
     match _WireProtocol.decode_client_message(consume data)
     | let msg: _EventMessage =>
       h.assert_eq[String]("increment", msg.event)
       match msg.payload
-      | let obj: json.JsonObject =>
+      | let obj: json.JSONObject =>
         try
           match obj("value")?
           | let v: String => h.assert_eq[String]("5", v)
@@ -319,7 +319,7 @@ class \nodoc\ _TestDecodeEvent is UnitTest
           h.fail("payload missing 'value' key")
         end
       else
-        h.fail("payload should be a JsonObject")
+        h.fail("payload should be a JSONObject")
       end
     else
       h.fail("expected _EventMessage")
@@ -329,7 +329,7 @@ class \nodoc\ _TestDecodeHeartbeat is UnitTest
   fun name(): String => "wire_protocol/decode_heartbeat"
 
   fun apply(h: TestHelper) =>
-    let data = json.JsonObject
+    let data = json.JSONObject
       .update("t", "heartbeat")
       .print()
 
@@ -354,7 +354,7 @@ class \nodoc\ _TestDecodeMissingType is UnitTest
   fun name(): String => "wire_protocol/decode_missing_type"
 
   fun apply(h: TestHelper) =>
-    let data = json.JsonObject
+    let data = json.JSONObject
       .update("e", "increment")
       .print()
 
@@ -369,7 +369,7 @@ class \nodoc\ _TestDecodeUnknownType is UnitTest
   fun name(): String => "wire_protocol/decode_unknown_type"
 
   fun apply(h: TestHelper) =>
-    let data = json.JsonObject
+    let data = json.JSONObject
       .update("t", "bogus")
       .print()
 
@@ -434,7 +434,7 @@ class \nodoc\ _TestSocketPushEvent is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let assigns = Assigns
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let components = _ComponentRegistry(pending)
     let socket =
       Socket(
@@ -549,7 +549,7 @@ class \nodoc\ _TestSocketConnectedTrue is UnitTest
 
   fun apply(h: TestHelper) =>
     let assigns = Assigns
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let components = _ComponentRegistry(pending)
     let socket =
       Socket(
@@ -563,7 +563,7 @@ class \nodoc\ _TestSocketConnectedFalse is UnitTest
 
   fun apply(h: TestHelper) =>
     let assigns = Assigns
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let socket = Socket._for_render(assigns, pending)
     h.assert_false(
       socket.connected(),
@@ -574,7 +574,7 @@ class \nodoc\ _TestSocketDisconnectedSubscribeNoop is UnitTest
 
   fun apply(h: TestHelper) =>
     let assigns = Assigns
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     // These should not crash — they no-op when PubSub is None
     Socket._for_render(assigns, pending)
       .> subscribe("topic")
@@ -589,7 +589,7 @@ class \nodoc\ _RenderTestView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: Socket ref)
   =>
     None
@@ -607,7 +607,7 @@ class \nodoc\ _FailRenderView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: Socket ref)
   =>
     None
@@ -668,7 +668,7 @@ class \nodoc\ _ConnectedBranchView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: Socket ref)
   =>
     None
@@ -712,7 +712,7 @@ class \nodoc\ _ComponentView is LiveView
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: Socket ref)
   =>
     None
@@ -740,7 +740,7 @@ class \nodoc\ _TestSocketSubscribeDeliver is UnitTest
   fun apply(h: TestHelper) =>
     h.long_test(2_000_000_000)
     let assigns = Assigns
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let receiver = _TestInfoReceiver(h)
     let pub_sub = PubSub
     let components = _ComponentRegistry(pending)
@@ -762,13 +762,13 @@ class \nodoc\ _TestComponent is LiveComponent
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: ComponentSocket ref)
   =>
     match event
     | "set_value" =>
       try
-        let nav = json.JsonNav(payload)
+        let nav = json.JSONNav(payload)
         let v = nav("v").as_string()?
         socket.assign("value", v)
       end
@@ -791,7 +791,7 @@ class \nodoc\ _FailingComponent is LiveComponent
 
   fun ref handle_event(
     event: String val,
-    payload: json.JsonValue,
+    payload: json.JSONValue,
     socket: ComponentSocket ref)
   =>
     None
@@ -805,7 +805,7 @@ class \nodoc\ _TestComponentSocketAssignRoundtrip is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let assigns = Assigns
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let socket = ComponentSocket(assigns, pending)
     socket.assign("key", "value")
     let retrieved = socket.get_assign("key")?.string()?
@@ -816,7 +816,7 @@ class \nodoc\ _TestComponentSocketPushEvent is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let assigns = Assigns
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let socket = ComponentSocket(assigns, pending)
     socket.push_event("notify", "data")
 
@@ -829,7 +829,7 @@ class \nodoc\ _TestRegistryRegisterAndLookup is UnitTest
   fun name(): String => "registry/register_and_lookup"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     let component = _TestComponent
     component.mount_called = false
@@ -844,7 +844,7 @@ class \nodoc\ _TestRegistryMaxComponents is UnitTest
   fun name(): String => "registry/max_components"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending where max_components = 2)
     h.assert_true(registry.register("c1", _TestComponent))
     h.assert_true(registry.register("c2", _TestComponent))
@@ -857,7 +857,7 @@ class \nodoc\ _TestRegistryUnregister is UnitTest
   fun name(): String => "registry/unregister"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     registry.register("c1", _TestComponent)
     registry.unregister("c1")
@@ -868,7 +868,7 @@ class \nodoc\ _TestRegistryDuplicateIdReplace is UnitTest
   fun name(): String => "registry/duplicate_id_replace"
 
   fun apply(h: TestHelper) ? =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     let c1 = _TestComponent
     let c2 = _TestComponent
@@ -884,7 +884,7 @@ class \nodoc\ _TestRegistryDuplicateIdAtCapacity is UnitTest
   fun name(): String => "registry/duplicate_id_at_capacity"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending where max_components = 1)
     registry.register("c1", _TestComponent)
     // Re-registering existing ID at capacity should succeed (replacement)
@@ -897,7 +897,7 @@ class \nodoc\ _TestRegistryRegisterAfterUnregister is UnitTest
   fun name(): String => "registry/register_after_unregister"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending where max_components = 1)
     registry.register("c1", _TestComponent)
     registry.unregister("c1")
@@ -910,17 +910,17 @@ class \nodoc\ _TestRegistryHandleEventFound is UnitTest
   fun name(): String => "registry/handle_event_found"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     registry.register("c1", _TestComponent)
-    let payload = json.JsonObject.update("v", "updated")
+    let payload = json.JSONObject.update("v", "updated")
     h.assert_true(registry.handle_event("c1", "set_value", payload))
 
 class \nodoc\ _TestRegistryHandleEventNotFound is UnitTest
   fun name(): String => "registry/handle_event_not_found"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     h.assert_false(registry.handle_event("nonexistent", "click", None))
 
@@ -929,7 +929,7 @@ class \nodoc\ _TestRegistryRenderChanged is UnitTest
   fun name(): String => "registry/render_changed"
 
   fun apply(h: TestHelper) ? =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     let component = _TestComponent
     registry.register("c1", component)
@@ -951,7 +951,7 @@ class \nodoc\ _TestRegistryRenderUnchangedCached is UnitTest
   fun name(): String => "registry/render_unchanged_cached"
 
   fun apply(h: TestHelper) ? =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     registry.register("c1", _TestComponent)
 
@@ -975,7 +975,7 @@ class \nodoc\ _TestRegistryRenderFailure is UnitTest
   fun name(): String => "registry/render_failure"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     registry.register("fail", _FailingComponent)
     let errors = registry.flush_render_errors()
@@ -991,7 +991,7 @@ class \nodoc\ _TestRegistryPopulateComponentHTML is UnitTest
   fun name(): String => "registry/populate_component_html"
 
   fun apply(h: TestHelper) ? =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     registry.register("c1", _TestComponent)
 
@@ -1013,10 +1013,10 @@ class \nodoc\ _TestDecodeEventWithTarget is UnitTest
   fun name(): String => "wire_protocol/decode_event_with_target"
 
   fun apply(h: TestHelper) =>
-    let data = json.JsonObject
+    let data = json.JSONObject
       .update("t", "event")
       .update("e", "toggle")
-      .update("p", json.JsonObject.update("id", "3"))
+      .update("p", json.JSONObject.update("id", "3"))
       .update("c", "todo-3")
       .print()
 
@@ -1035,7 +1035,7 @@ class \nodoc\ _TestDecodeEventWithoutTarget is UnitTest
   fun name(): String => "wire_protocol/decode_event_without_target"
 
   fun apply(h: TestHelper) =>
-    let data = json.JsonObject
+    let data = json.JSONObject
       .update("t", "event")
       .update("e", "click")
       .update("p", None)
@@ -1056,7 +1056,7 @@ class \nodoc\ _TestDecodeEventNonStringTarget is UnitTest
   fun name(): String => "wire_protocol/decode_event_non_string_target"
 
   fun apply(h: TestHelper) =>
-    let data = json.JsonObject
+    let data = json.JSONObject
       .update("t", "event")
       .update("e", "click")
       .update("p", None)
@@ -1145,7 +1145,7 @@ class \nodoc\ _TestRegistryEmptyStringTarget is UnitTest
   fun name(): String => "registry/empty_string_target"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     h.assert_false(
       registry.handle_event("", "click", None),
@@ -1156,7 +1156,7 @@ class \nodoc\ _TestRegistryLongTarget is UnitTest
   fun name(): String => "registry/long_target"
 
   fun apply(h: TestHelper) =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     let long_id =
       recover val
@@ -1170,7 +1170,7 @@ class \nodoc\ _TestComponentIsolation is UnitTest
   fun name(): String => "registry/component_isolation"
 
   fun apply(h: TestHelper) ? =>
-    let pending = Array[(String val, json.JsonValue)]
+    let pending = Array[(String val, json.JSONValue)]
     let registry = _ComponentRegistry(pending)
     registry.register("a", _TestComponent)
     registry.register("b", _TestComponent)
@@ -1785,16 +1785,16 @@ class \nodoc\ _TestEncodeRenderFull is UnitTest
     let dynamics: Array[String] val = ["42"]
     let encoded = _WireProtocol.encode_render_full(statics, dynamics)
     let obj =
-      match json.JsonParser.parse(encoded)
-      | let o: json.JsonObject => o
-      else h.fail("expected JsonObject"); error
+      match json.JSONParser.parse(encoded)
+      | let o: json.JSONObject => o
+      else h.fail("expected JSONObject"); error
       end
     match obj("t")?
     | let t: String => h.assert_eq[String]("render_full", t)
     else h.fail("'t' should be a string")
     end
     match obj("s")?
-    | let s: json.JsonArray =>
+    | let s: json.JSONArray =>
       h.assert_eq[USize](2, s.size())
       match s(0)?
       | let v: String => h.assert_eq[String]("<div>", v)
@@ -1804,16 +1804,16 @@ class \nodoc\ _TestEncodeRenderFull is UnitTest
       | let v: String => h.assert_eq[String]("</div>", v)
       else h.fail("s(1) should be a string")
       end
-    else h.fail("'s' should be a JsonArray")
+    else h.fail("'s' should be a JSONArray")
     end
     match obj("d")?
-    | let d: json.JsonArray =>
+    | let d: json.JSONArray =>
       h.assert_eq[USize](1, d.size())
       match d(0)?
       | let v: String => h.assert_eq[String]("42", v)
       else h.fail("d(0) should be a string")
       end
-    else h.fail("'d' should be a JsonArray")
+    else h.fail("'d' should be a JSONArray")
     end
 
 class \nodoc\ _TestEncodeRenderDiff is UnitTest
@@ -1823,16 +1823,16 @@ class \nodoc\ _TestEncodeRenderDiff is UnitTest
     let changes: Array[(USize, String)] val = [(0, "43"); (2, "new")]
     let encoded = _WireProtocol.encode_render_diff(changes)
     let obj =
-      match json.JsonParser.parse(encoded)
-      | let o: json.JsonObject => o
-      else h.fail("expected JsonObject"); error
+      match json.JSONParser.parse(encoded)
+      | let o: json.JSONObject => o
+      else h.fail("expected JSONObject"); error
       end
     match obj("t")?
     | let t: String => h.assert_eq[String]("render_diff", t)
     else h.fail("'t' should be a string")
     end
     match obj("d")?
-    | let d: json.JsonObject =>
+    | let d: json.JSONObject =>
       match d("0")?
       | let v: String => h.assert_eq[String]("43", v)
       else h.fail("d('0') should be a string")
@@ -1841,7 +1841,7 @@ class \nodoc\ _TestEncodeRenderDiff is UnitTest
       | let v: String => h.assert_eq[String]("new", v)
       else h.fail("d('2') should be a string")
       end
-    else h.fail("'d' should be a JsonObject")
+    else h.fail("'d' should be a JSONObject")
     end
 
 class \nodoc\ _TestEncodeRenderDiffEmpty is UnitTest
@@ -1852,18 +1852,18 @@ class \nodoc\ _TestEncodeRenderDiffEmpty is UnitTest
       recover val Array[(USize, String)] end
     let encoded = _WireProtocol.encode_render_diff(changes)
     let obj =
-      match json.JsonParser.parse(encoded)
-      | let o: json.JsonObject => o
-      else h.fail("expected JsonObject"); error
+      match json.JSONParser.parse(encoded)
+      | let o: json.JSONObject => o
+      else h.fail("expected JSONObject"); error
       end
     match obj("t")?
     | let t: String => h.assert_eq[String]("render_diff", t)
     else h.fail("'t' should be a string")
     end
     match obj("d")?
-    | let d: json.JsonObject =>
+    | let d: json.JSONObject =>
       h.assert_eq[USize](0, d.size())
-    else h.fail("'d' should be a JsonObject")
+    else h.fail("'d' should be a JSONObject")
     end
 
 // --- LiveView default render_parts test ---

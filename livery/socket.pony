@@ -10,7 +10,7 @@ class Socket
   connection reference, and managing stateful components.
   """
   let _assigns: Assigns ref
-  let _pending_events: Array[(String val, json.JsonValue)] ref
+  let _pending_events: Array[(String val, json.JSONValue)] ref
   let _self: InfoReceiver tag
   let _pub_sub: (PubSub tag | None)
   let _connected: Bool
@@ -18,7 +18,7 @@ class Socket
 
   new create(
     assigns: Assigns ref,
-    pending_events: Array[(String val, json.JsonValue)] ref,
+    pending_events: Array[(String val, json.JSONValue)] ref,
     self': InfoReceiver tag,
     pub_sub: PubSub tag,
     components: _ComponentRegistry ref)
@@ -31,7 +31,7 @@ class Socket
     _components = components
 
   new _for_render(assigns: Assigns ref,
-    pending_events: Array[(String val, json.JsonValue)] ref)
+    pending_events: Array[(String val, json.JSONValue)] ref)
   =>
     _assigns = assigns
     _pending_events = pending_events
@@ -55,7 +55,7 @@ class Socket
     """
     _assigns(key)?
 
-  fun ref push_event(event: String val, payload: json.JsonValue) =>
+  fun ref push_event(event: String val, payload: json.JSONValue) =>
     """
     Push a server-initiated event to the client. Events are queued and
     flushed after the current render cycle.

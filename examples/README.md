@@ -13,7 +13,7 @@ cd client && npm install && npm run build
 1. Compile the examples:
 
 ```sh
-make ssl=openssl_3.0.x examples
+make ssl=3.0.x examples
 ```
 
 1. Start the Pony server for the example you want to run:

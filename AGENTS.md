@@ -35,16 +35,16 @@ Run `make lint` before considering any work done. Fix all issues it reports. `ma
 ## Building and testing
 
 ```
-make test ssl=openssl_3.0.x                # build + run tests + build examples (test is default)
-make unit-tests ssl=openssl_3.0.x          # tests only
-make test-one t=TestName ssl=openssl_3.0.x # run a single test by name
-make examples ssl=openssl_3.0.x            # examples only
+make test ssl=3.0.x                # build + run tests + build examples (test is default)
+make unit-tests ssl=3.0.x          # tests only
+make test-one t=TestName ssl=3.0.x # run a single test by name
+make examples ssl=3.0.x            # examples only
 make clean
 make client-test                           # JS client tests (Docker, no local Node needed)
 make client-build                          # JS client bundles (Docker)
 ```
 
-`ssl=` is required because mare (the WebSocket transport) pulls in `ssl`; on OpenSSL 3.x use `ssl=openssl_3.0.x`. The JS client can also be built directly: `cd client && npm install && npm test`, then `npm run build`.
+`ssl=` is required because mare (the WebSocket transport) pulls in `ssl`: `3.0.x`, `1.1.x`, or `libressl`. The JS client can also be built directly: `cd client && npm install && npm test`, then `npm run build`.
 
 ## Wire protocol
 

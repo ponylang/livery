@@ -26,7 +26,17 @@ else
 endif
 
 ifdef ssl
-	PONYC += -D$(ssl)
+  ifeq ($(ssl), 3.0.x)
+    SSL = -Dopenssl_3.0.x
+  else ifeq ($(ssl), 1.1.x)
+    SSL = -Dopenssl_1.1.x
+  else ifeq ($(ssl), libressl)
+    SSL = -Dlibressl
+  else
+    $(error Unknown SSL version "$(ssl)". Must set using 'ssl=FOO')
+  endif
+
+  PONYC := $(PONYC) $(SSL)
 endif
 
 SOURCE_FILES := $(shell find $(SRC_DIR) -name *.pony)

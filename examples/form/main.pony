@@ -11,11 +11,11 @@ class FormView is LiveView
   `lv-submit` for full form validation on submit. Field values and error
   messages are stored as assigns and rendered via the template.
   """
-  let _template: HtmlTemplate val
+  let _template: HTMLTemplate val
 
   new create() ? =>
     _template =
-      HtmlTemplate.parse(
+      HTMLTemplate.parse(
         """
       <div>
         <h1>Register</h1>

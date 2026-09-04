@@ -7,11 +7,11 @@ class CounterView is LiveView
   """
   A LiveView that displays a counter with increment/decrement buttons.
   """
-  let _template: HtmlTemplate val
+  let _template: HTMLTemplate val
 
   new create() ? =>
     _template =
-      HtmlTemplate.parse(
+      HTMLTemplate.parse(
         """
       <div>
         <h1>Count: {{ count }}</h1>

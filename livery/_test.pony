@@ -1196,7 +1196,7 @@ class \nodoc\ _TestComponentIsolation is UnitTest
 // --- RenderSink roundtrip tests ---
 class \nodoc\ _TestRenderSinkRoundtrip is Property1[String]
   """
-  render_to(sink) -> full_html() matches HtmlTemplate.render() for a
+  render_to(sink) -> full_html() matches HTMLTemplate.render() for a
   single-variable template with random values.
   """
   fun name(): String => "render_sink/roundtrip"
@@ -1205,7 +1205,7 @@ class \nodoc\ _TestRenderSinkRoundtrip is Property1[String]
     Generators.ascii_printable(0, 50)
 
   fun property(value: String, h: PropertyHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl = templates.HTMLTemplate.parse("<div>{{ x }}</div>")?
     let tv = templates.TemplateValues
     tv("x") = value
 
@@ -1234,7 +1234,7 @@ class \nodoc\ _TestRenderSinkRoundtripMultiVar is
   fun property(sample: (String, String, String), h: PropertyHelper) ? =>
     (let a, let b, let c) = sample
     let tmpl =
-      templates.HtmlTemplate.parse(
+      templates.HTMLTemplate.parse(
         "<p>{{ x }}</p><p>{{ y }}</p><p>{{ z }}</p>")?
     let tv = templates.TemplateValues
     tv("x") = a
@@ -1258,7 +1258,7 @@ class \nodoc\ _TestRenderSinkIfCollapse is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let tmpl =
-      templates.HtmlTemplate.parse(
+      templates.HTMLTemplate.parse(
         "<div>{{ if show }}visible{{ end }}</div>")?
     let tv = templates.TemplateValues
     tv("show") = "true"
@@ -1285,7 +1285,7 @@ class \nodoc\ _TestRenderSinkEmptyDynamics is UnitTest
   fun name(): String => "render_sink/empty_dynamics"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse("<div>hello</div>")?
+    let tmpl = templates.HTMLTemplate.parse("<div>hello</div>")?
     let tv = templates.TemplateValues
 
     let expected = tmpl.render(tv)?
@@ -1379,9 +1379,9 @@ class \nodoc\ _TestRenderSinkDynamicsCountChange is UnitTest
   fun name(): String => "render_sink/dynamics_count_change"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl1 = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl1 = templates.HTMLTemplate.parse("<div>{{ x }}</div>")?
     let tmpl2 =
-      templates.HtmlTemplate.parse(
+      templates.HTMLTemplate.parse(
         "<p>{{ a }}</p><p>{{ b }}</p>")?
     let tv = templates.TemplateValues
     tv("x") = "one"
@@ -1405,13 +1405,13 @@ class \nodoc\ _TestRenderSinkDynamicsCountChange is UnitTest
 class \nodoc\ _TestRenderSinkEscapingRoundtrip is UnitTest
   """
   Targeted escaping roundtrip: render_to(sink) -> full_html() matches
-  HtmlTemplate.render() for a value containing HTML-significant characters.
+  HTMLTemplate.render() for a value containing HTML-significant characters.
   Makes the auto-escaping equivalence visible without relying on generators.
   """
   fun name(): String => "render_sink/escaping_roundtrip"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl = templates.HTMLTemplate.parse("<div>{{ x }}</div>")?
     let tv = templates.TemplateValues
     tv("x") = "<script>alert('xss')</script>"
 
@@ -1432,7 +1432,7 @@ class \nodoc\ _TestRenderSinkFirstRender is UnitTest
   fun name(): String => "render_sink/first_render"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl = templates.HTMLTemplate.parse("<div>{{ x }}</div>")?
     let tv = templates.TemplateValues
     tv("x") = "hello"
 
@@ -1458,7 +1458,7 @@ class \nodoc\ _TestRenderSinkNoDiff is UnitTest
   fun name(): String => "render_sink/no_diff"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl = templates.HTMLTemplate.parse("<div>{{ x }}</div>")?
     let tv = templates.TemplateValues
     tv("x") = "same"
 
@@ -1484,7 +1484,7 @@ class \nodoc\ _TestRenderSinkPartialDiff is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let tmpl =
-      templates.HtmlTemplate.parse(
+      templates.HTMLTemplate.parse(
         "<p>{{ a }}</p><p>{{ b }}</p><p>{{ c }}</p>")?
     let tv = templates.TemplateValues
     tv("a") = "1"
@@ -1518,7 +1518,7 @@ class \nodoc\ _TestRenderSinkAllSlotsDiff is UnitTest
 
   fun apply(h: TestHelper) ? =>
     let tmpl =
-      templates.HtmlTemplate.parse(
+      templates.HTMLTemplate.parse(
         "<p>{{ a }}</p><p>{{ b }}</p>")?
     let tv = templates.TemplateValues
     tv("a") = "1"
@@ -1550,8 +1550,8 @@ class \nodoc\ _TestRenderSinkStaticsMismatch is UnitTest
   fun name(): String => "render_sink/statics_mismatch"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl1 = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
-    let tmpl2 = templates.HtmlTemplate.parse("<span>{{ x }}</span>")?
+    let tmpl1 = templates.HTMLTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl2 = templates.HTMLTemplate.parse("<span>{{ x }}</span>")?
     let tv = templates.TemplateValues
     tv("x") = "hello"
 
@@ -1576,7 +1576,7 @@ class \nodoc\ _TestRenderSinkClear is UnitTest
   fun name(): String => "render_sink/clear"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl = templates.HTMLTemplate.parse("<div>{{ x }}</div>")?
     let tv = templates.TemplateValues
     tv("x") = "hello"
 
@@ -1604,7 +1604,7 @@ class \nodoc\ _TestRenderSinkAbandon is UnitTest
   fun name(): String => "render_sink/abandon"
 
   fun apply(h: TestHelper) ? =>
-    let tmpl = templates.HtmlTemplate.parse("<div>{{ x }}</div>")?
+    let tmpl = templates.HTMLTemplate.parse("<div>{{ x }}</div>")?
     let tv = templates.TemplateValues
     tv("x") = "hello"
 
@@ -1660,7 +1660,7 @@ class \nodoc\ _TestRenderSinkDiffProperty is Property1[(USize, Bool)]
       end
 
     try
-      let tmpl = templates.HtmlTemplate.parse(tmpl_str)?
+      let tmpl = templates.HTMLTemplate.parse(tmpl_str)?
 
       // Base values: "base_0", "base_1", ...
       let tv = templates.TemplateValues

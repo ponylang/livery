@@ -47,8 +47,8 @@ class Assigns
 
   fun box template_values(): templates.TemplateValues box =>
     """
-    Return the backing TemplateValues for use with `HtmlTemplate.render()`
-    or `HtmlTemplate.render_to()`.
+    Return the backing TemplateValues for use with `HTMLTemplate.render()`
+    or `HTMLTemplate.render_to()`.
     """
     _values
 
@@ -59,7 +59,7 @@ class Assigns
     Use this in `render()` or `render_parts()` to include component
     output in the parent's HTML. The returned string is already escaped
     by the component's own
-    `HtmlTemplate` -- insert it as `TemplateValue.unescaped()` in the
+    `HTMLTemplate` -- insert it as `TemplateValue.unescaped()` in the
     parent's template values.
     """
     _component_html(id)?

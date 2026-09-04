@@ -11,7 +11,7 @@ Define server-side view logic by implementing the `LiveView` trait:
 - `handle_info` receives server-push messages from external actors
 - `render` produces HTML from the current `Assigns`
 
-Use `HtmlTemplate` from the templates library for rendering — it auto-escapes
+Use `HTMLTemplate` from the templates library for rendering — it auto-escapes
 dynamic values by default.
 
 ## Components
@@ -25,7 +25,7 @@ Register components through `Socket`:
 - `Socket.update_component(id, data)` — pass data from the parent to a component
 - `Socket.unregister_component(id)` — remove a component
 
-Components render independently through `HtmlTemplate`. The parent accesses
+Components render independently through `HTMLTemplate`. The parent accesses
 component output in `render` via `assigns.component_html(id)` and inserts it
 as unescaped HTML (safe because the component's own template already escaped
 all dynamic values). Use `assigns.render_values()` to create a writable child

@@ -15,11 +15,11 @@ class TickerView is LiveView
   demonstrates both push mechanisms: server-rendered DOM updates and
   client-side event handling via `on()`.
   """
-  let _template: HtmlTemplate val
+  let _template: HTMLTemplate val
 
   new create() ? =>
     _template =
-      HtmlTemplate.parse(
+      HTMLTemplate.parse(
         """
       <div>
         <h1>Ticks: {{ count }}</h1>

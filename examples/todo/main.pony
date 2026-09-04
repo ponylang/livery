@@ -9,11 +9,11 @@ class TodoItem is LiveComponent
   events route to the parent view (no lv-target on the delete button)
   because the parent manages component lifecycle.
   """
-  let _template: HtmlTemplate val
+  let _template: HTMLTemplate val
 
   new create() ? =>
     _template =
-      HtmlTemplate.parse(
+      HTMLTemplate.parse(
         """
         <li>
           <span class="{{ css_class }}">{{ text }}</span>
@@ -67,13 +67,13 @@ class TodoListView is LiveView
   - Parent-handled events (delete goes to parent via `lv-value-id`)
   - Component HTML rendering via `assigns.component_html`
   """
-  let _template: HtmlTemplate val
+  let _template: HTMLTemplate val
   var _next_id: USize = 1
   var _todo_ids: Array[String] ref = Array[String]
 
   new create() ? =>
     _template =
-      HtmlTemplate.parse(
+      HTMLTemplate.parse(
         """
         <div>
           <h1>Todo List</h1>

@@ -12,7 +12,7 @@ trait LiveComponent
   register them with `Socket.register_component`. Target events to
   components with the `lv-target` attribute in HTML.
 
-  Components render through `HtmlTemplate` for auto-escaping, same as
+  Components render through `HTMLTemplate` for auto-escaping, same as
   views. The parent inserts component output as unescaped HTML -- this is
   safe because the component's template already escaped all dynamic values.
   """
@@ -47,5 +47,5 @@ trait LiveComponent
   fun box render(assigns: Assigns box): String ?
     """
     Return the component's HTML. Same contract as `LiveView.render`:
-    partial, `box` receiver, auto-escape with `HtmlTemplate`.
+    partial, `box` receiver, auto-escape with `HTMLTemplate`.
     """

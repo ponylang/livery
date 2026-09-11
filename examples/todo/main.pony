@@ -1,6 +1,6 @@
 use "templates"
 use "json"
-use lori = "lori"
+use "net"
 use "../../livery"
 
 class TodoItem is LiveComponent
@@ -164,7 +164,7 @@ actor Main
       {(): LiveView ref^ ? => TodoListView.create()? } val)
 
     Listener(
-      lori.TCPListenAuth(env.root),
+      TCPListenAuth(env.root),
       "0.0.0.0",
       "8086",
       router.build(),

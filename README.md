@@ -8,7 +8,7 @@ Livery is beta quality software that will change frequently. Expect breaking cha
 
 ## Installation
 
-* Requires ponyc 0.71.0 or later.
+* Requires ponyc 0.72.0 or later.
 * Install [corral](https://github.com/ponylang/corral)
 * `corral add github.com/ponylang/livery.git --version 0.10.0`
 * `corral fetch` to fetch your dependencies
@@ -24,7 +24,7 @@ Define a `LiveView` class, register routes, and start a listener:
 ```pony
 use "templates"
 use "json"
-use lori = "lori"
+use "net"
 use "livery"
 
 class CounterView is LiveView
@@ -61,7 +61,7 @@ actor Main
     router.route("/counter",
       {(): LiveView ref^ ? => CounterView.create()?} val)
 
-    Listener(lori.TCPListenAuth(env.root), "0.0.0.0", "8081",
+    Listener(TCPListenAuth(env.root), "0.0.0.0", "8081",
       router.build(), env.err)
 ```
 

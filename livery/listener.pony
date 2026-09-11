@@ -1,36 +1,36 @@
 use mare = "mare"
-use lori = "lori"
+use "net"
 
-actor Listener is lori.TCPListenerActor
+actor Listener is TCPListenerActor
   """
   WebSocket listener that routes incoming connections to LiveView instances.
 
   Create a `Router`, register paths with factories, then pass the frozen
   `Routes` to the listener.
   """
-  var _tcp_listener: lori.TCPListener = lori.TCPListener.none()
-  let _server_auth: lori.TCPServerAuth
+  var _tcp_listener: TCPListener = TCPListener.none()
+  let _server_auth: TCPServerAuth
   let _config: mare.WebSocketConfig val
   let _routes: Routes val
   let _pub_sub: PubSub tag
   let _out: OutStream tag
 
   new create(
-    auth: lori.TCPListenAuth,
+    auth: TCPListenAuth,
     host: String,
     port: String,
     routes: Routes val,
     pub_sub: PubSub tag,
     out: OutStream tag)
   =>
-    _server_auth = lori.TCPServerAuth(auth)
+    _server_auth = TCPServerAuth(auth)
     _config = mare.WebSocketConfig(host, port)
     _routes = routes
     _pub_sub = pub_sub
     _out = out
-    _tcp_listener = lori.TCPListener(auth, host, port, this)
+    _tcp_listener = TCPListener(auth, host, port, this)
 
-  fun ref _listener(): lori.TCPListener =>
+  fun ref _listener(): TCPListener =>
     _tcp_listener
 
   fun ref _on_accept(fd: U32): _Connection =>

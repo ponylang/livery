@@ -1,7 +1,7 @@
 use "time"
 use "templates"
 use "json"
-use lori = "lori"
+use "net"
 use "../../livery"
 
 class TickerView is LiveView
@@ -95,7 +95,7 @@ actor Main
       {(): LiveView ref^ ? => TickerView.create()? } val)
 
     Listener(
-      lori.TCPListenAuth(env.root),
+      TCPListenAuth(env.root),
       "0.0.0.0",
       "8082",
       router.build(),

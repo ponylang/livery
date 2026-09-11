@@ -1,5 +1,5 @@
 use mare = "mare"
-use lori = "lori"
+use "net"
 use json = "json"
 
 actor _Connection is mare.WebSocketServerActor
@@ -23,7 +23,7 @@ actor _Connection is mare.WebSocketServerActor
   let _render_sink: _RenderSink ref = _RenderSink
 
   new create(
-    auth: lori.TCPServerAuth,
+    auth: TCPServerAuth,
     fd: U32,
     config: mare.WebSocketConfig val,
     routes: Routes val,
@@ -81,8 +81,8 @@ actor _Connection is mare.WebSocketServerActor
 
     _view = view
 
-    match lori.MakeIdleTimeout(60_000)
-    | let t: lori.IdleTimeout => _connection().idle_timeout(t)
+    match MakeIdleTimeout(60_000)
+    | let t: IdleTimeout => _connection().idle_timeout(t)
     end
 
   fun ref on_text_message(data: String val) =>

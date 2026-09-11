@@ -2,7 +2,7 @@ use "files"
 use "templates"
 use "json"
 use hobby = "hobby"
-use lori = "lori"
+use "net"
 use stallion = "stallion"
 use "../../livery"
 
@@ -64,7 +64,7 @@ actor Main is hobby.ServerNotify
     let router = Router
     router.route("/ssr", factory)
     Listener(
-      lori.TCPListenAuth(env.root),
+      TCPListenAuth(env.root),
       "0.0.0.0",
       "8084",
       router.build(),
@@ -79,7 +79,7 @@ actor Main is hobby.ServerNotify
     match \exhaustive\ app.build()
     | let built: hobby.BuiltApplication =>
       hobby.Server(
-        lori.TCPListenAuth(env.root),
+        TCPListenAuth(env.root),
         built,
         this
         where host = "0.0.0.0", port = "8085")

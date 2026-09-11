@@ -1,6 +1,6 @@
 use "templates"
 use "json"
-use lori = "lori"
+use "net"
 use "../../livery"
 
 class CounterView is LiveView
@@ -60,7 +60,7 @@ actor Main
       {(): LiveView ref^ ? => CounterView.create()? } val)
 
     Listener(
-      lori.TCPListenAuth(env.root),
+      TCPListenAuth(env.root),
       "0.0.0.0",
       "8081",
       router.build(),

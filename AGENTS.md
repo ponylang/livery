@@ -44,7 +44,7 @@ make client-test                           # JS client tests (Docker, no local N
 make client-build                          # JS client bundles (Docker)
 ```
 
-`ssl=` is required because mare (the WebSocket transport) pulls in `ssl`: `3.0.x`, `1.1.x`, or `libressl`. The JS client can also be built directly: `cd client && npm install && npm test`, then `npm run build`.
+`ssl=` is required because the ponyc `net` package needs an SSL version selected at compile time: `3.0.x`, `1.1.x`, or `libressl`. The JS client can also be built directly: `cd client && npm install && npm test`, then `npm run build`.
 
 ## Wire protocol
 

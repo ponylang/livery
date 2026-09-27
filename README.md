@@ -8,14 +8,12 @@ Livery is beta quality software that will change frequently. Expect breaking cha
 
 ## Installation
 
-* Requires ponyc 0.72.0 or later.
+* Requires ponyc 0.73.0 or later.
 * Install [corral](https://github.com/ponylang/corral)
 * `corral add github.com/ponylang/livery.git --version 0.12.0`
 * `corral fetch` to fetch your dependencies
 * `use "livery"` to include this package
 * `corral run -- ponyc` to compile your application
-
-Note: livery depends on the [ssl](https://github.com/ponylang/ssl) package transitively through [mare](https://github.com/ponylang/mare). See the [ssl installation instructions](https://github.com/ponylang/ssl#installation) for OpenSSL setup, and pass the appropriate `-D` flag when compiling (e.g., `corral run -- ponyc -Dopenssl_3.0.x`).
 
 ## Usage
 

@@ -1,5 +1,4 @@
 use "pony_test"
-use "pony_check"
 use templates = "templates"
 use json = "json"
 
@@ -9,9 +8,9 @@ actor \nodoc\ Main is TestList
 
   fun tag tests(test: PonyTest) =>
     // Assigns property tests
-    test(Property1UnitTest[String](_AssignsDirtyTracking))
-    test(Property1UnitTest[String](_AssignsValueRoundtrip))
-    test(Property1UnitTest[String](_AssignsTemplateBridge))
+    test.property(_AssignsDirtyTracking)
+    test.property(_AssignsValueRoundtrip)
+    test.property(_AssignsTemplateBridge)
     // Wire protocol encode tests
     test(_TestEncodeRender)
     test(_TestEncodeHeartbeatAck)
@@ -81,12 +80,11 @@ actor \nodoc\ Main is TestList
     test(_TestRegistryLongTarget)
     test(_TestComponentIsolation)
     // RenderSink roundtrip tests
-    test(Property1UnitTest[String](_TestRenderSinkRoundtrip))
-    test(Property1UnitTest[(String, String, String)](
-      _TestRenderSinkRoundtripMultiVar))
+    test.property(_TestRenderSinkRoundtrip)
+    test.property(_TestRenderSinkRoundtripMultiVar)
     test(_TestRenderSinkIfCollapse)
     test(_TestRenderSinkEmptyDynamics)
-    test(Property1UnitTest[USize](_TestRenderSinkInterleave))
+    test.property(_TestRenderSinkInterleave)
     test(_TestRenderSinkDynamicsCountChange)
     test(_TestRenderSinkEscapingRoundtrip)
     // RenderSink diff tests
@@ -97,7 +95,7 @@ actor \nodoc\ Main is TestList
     test(_TestRenderSinkStaticsMismatch)
     test(_TestRenderSinkClear)
     test(_TestRenderSinkAbandon)
-    test(Property1UnitTest[(USize, Bool)](_TestRenderSinkDiffProperty))
+    test.property(_TestRenderSinkDiffProperty)
     test(_TestRenderSinkFallbackPattern)
     test(_TestRenderSinkFullHTMLBeforeRender)
     // Wire protocol split render tests
@@ -173,7 +171,7 @@ actor \nodoc\ _DummyInfoReceiver is InfoReceiver
   be info(message: Any val) => None
 
 // --- Assigns property tests ---
-class \nodoc\ _AssignsDirtyTracking is Property1[String]
+class \nodoc\ _AssignsDirtyTracking is Property[String]
   fun name(): String => "assigns/dirty_tracking"
 
   fun gen(): Generator[String] =>
@@ -195,7 +193,7 @@ class \nodoc\ _AssignsDirtyTracking is Property1[String]
       assigns.changed(),
       "update after clear should make assigns dirty again")
 
-class \nodoc\ _AssignsValueRoundtrip is Property1[String]
+class \nodoc\ _AssignsValueRoundtrip is Property[String]
   fun name(): String => "assigns/value_roundtrip"
 
   fun gen(): Generator[String] =>
@@ -207,7 +205,7 @@ class \nodoc\ _AssignsValueRoundtrip is Property1[String]
     let retrieved = assigns("test_key")?.string()?
     h.assert_eq[String](value, retrieved)
 
-class \nodoc\ _AssignsTemplateBridge is Property1[String]
+class \nodoc\ _AssignsTemplateBridge is Property[String]
   fun name(): String => "assigns/template_bridge"
 
   fun gen(): Generator[String] =>
@@ -1194,7 +1192,7 @@ class \nodoc\ _TestComponentIsolation is UnitTest
     h.assert_eq[String]("beta", registry.component_html("b")?)
 
 // --- RenderSink roundtrip tests ---
-class \nodoc\ _TestRenderSinkRoundtrip is Property1[String]
+class \nodoc\ _TestRenderSinkRoundtrip is Property[String]
   """
   render_to(sink) -> full_html() matches HTMLTemplate.render() for a
   single-variable template with random values.
@@ -1219,7 +1217,7 @@ class \nodoc\ _TestRenderSinkRoundtrip is Property1[String]
     h.assert_eq[String](expected, sink.full_html())
 
 class \nodoc\ _TestRenderSinkRoundtripMultiVar is
-  Property1[(String, String, String)]
+  Property[(String, String, String)]
   """
   Same roundtrip test with three variables.
   """
@@ -1303,7 +1301,7 @@ class \nodoc\ _TestRenderSinkEmptyDynamics is UnitTest
 
     h.assert_eq[String](expected, sink.full_html())
 
-class \nodoc\ _TestRenderSinkInterleave is Property1[USize]
+class \nodoc\ _TestRenderSinkInterleave is Property[USize]
   """
   Random statics/dynamics arrays, verify full_html() matches manual
   interleave. Uses generated arrays directly (not templates) to test the
@@ -1630,7 +1628,7 @@ class \nodoc\ _TestRenderSinkAbandon is UnitTest
       h.fail("expected _NoChange (should diff against pre-abandon cache)")
     end
 
-class \nodoc\ _TestRenderSinkDiffProperty is Property1[(USize, Bool)]
+class \nodoc\ _TestRenderSinkDiffProperty is Property[(USize, Bool)]
   """
   Diff contains exactly the indices where values differ.
 

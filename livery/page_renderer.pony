@@ -6,13 +6,13 @@ primitive PageRenderFactoryFailed
   """
   The Factory failed to create a LiveView instance.
   """
-  fun string(): String iso^ => "factory_failed".clone()
+  fun string(): String => "factory_failed"
 
 primitive PageRenderFailed
   """
   The LiveView's render method failed.
   """
-  fun string(): String iso^ => "render_failed".clone()
+  fun string(): String => "render_failed"
 
 primitive PageRenderer
   """
